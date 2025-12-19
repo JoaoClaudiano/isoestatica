@@ -1,124 +1,153 @@
-Calculadora Estrutural Interativa — Vigas Isostáticas
-📌 Visão Geral
+# Análise Estrutural Interativa — Vigas Isostáticas
 
-Este projeto consiste em uma ferramenta web interativa para análise estrutural, inicialmente focada em vigas isostáticas, com planos de expansão para pórticos, treliças, grelhas e arcos.
+## 1. Apresentação
 
-A aplicação permite que o usuário desenhe a estrutura diretamente na tela, insira apoios e cargas, e obtenha as reações de apoio com base nos princípios clássicos da Estática e Resistência dos Materiais.
+Este projeto consiste no desenvolvimento de uma **ferramenta web interativa para Análise Estrutural**, com foco inicial em **vigas isostáticas**, voltada ao **apoio didático no ensino de Engenharia**.
 
-O projeto é desenvolvido como um GitHub Pages, sem dependências externas pesadas, visando simplicidade, acessibilidade e foco educacional.
+A aplicação permite ao usuário **modelar graficamente estruturas**, definir **vínculos e carregamentos**, e obter as **reações de apoio** a partir das equações clássicas de equilíbrio estático. O sistema foi concebido para funcionar diretamente no navegador, sem dependência de softwares proprietários, priorizando acessibilidade e clareza conceitual.
 
-🎓 Motivação
+---
 
-Nos cursos de Engenharia Civil, especialmente nas disciplinas de:
+## 2. Justificativa e Motivação
 
-Mecânica Geral
+Nos cursos de **Engenharia Civil** e áreas afins, disciplinas como:
 
-Estática
+- Estática
+- Análise Estrutural
+- Mecânica Geral
+- Resistência dos Materiais
 
-Resistência dos Materiais
+apresentam, em geral, uma abordagem **predominantemente teórica**, com forte carga matemática e limitada disponibilidade de ferramentas interativas gratuitas que auxiliem na visualização e consolidação dos conceitos fundamentais.
 
-Análise Estrutural
+Diante desse contexto, esta ferramenta foi desenvolvida com o propósito de:
 
-é comum que o conteúdo seja altamente teórico, enquanto o material de apoio prático e interativo disponível gratuitamente seja limitado.
+- Auxiliar estudantes na **compreensão dos princípios da Análise Estrutural**
+- Reduzir o nível de abstração associado ao estudo de estruturas
+- Permitir a **experimentação prática** de diferentes configurações estruturais
+- Atuar como material complementar às aulas teóricas
 
-Esta ferramenta nasce com o objetivo de:
+O projeto também reflete um esforço pessoal de aprofundamento técnico e acadêmico, com o objetivo de contribuir para a comunidade estudantil, assim como o próprio autor foi impactado pela escassez de recursos didáticos interativos durante sua formação.
 
-Auxiliar estudantes no entendimento visual e conceitual do comportamento estrutural
+---
 
-Reduzir a abstração excessiva comum nas disciplinas iniciais
+## 3. Objetivos
 
-Servir como um ambiente de experimentação, onde o aluno pode:
+### 3.1 Objetivo Geral
 
-testar diferentes configurações
+Desenvolver uma ferramenta educacional interativa que auxilie no ensino e aprendizado de **Análise Estrutural**, permitindo a modelagem e análise de estruturas isostáticas de forma intuitiva e visual.
 
-errar
+### 3.2 Objetivos Específicos
 
-observar resultados
+- Permitir o desenho livre de vigas no plano
+- Possibilitar a definição de apoios e carregamentos
+- Aplicar corretamente as equações de equilíbrio estático
+- Determinar reações de apoio em estruturas isostáticas
+- Preparar a base computacional para expansão futura do sistema
 
-consolidar conceitos fundamentais
+---
 
-O projeto é também um exercício pessoal de aprendizado e aprofundamento em engenharia estrutural e desenvolvimento web, com a expectativa de contribuir com a comunidade acadêmica.
+## 4. Conceitos Teóricos Abordados
 
-🧠 Conceitos Abordados
+A ferramenta aborda conceitos fundamentais de **Análise Estrutural**, incluindo:
 
-Na versão atual, a ferramenta trabalha com:
+- Sistemas estruturais planos
+- Estruturas isostáticas
+- Vínculos e graus de liberdade
+- Equilíbrio estático:
+  - ΣFy = 0
+  - ΣM = 0
+- Cargas concentradas verticais
+- Reações de apoio
+- Conversão entre sistema gráfico e sistema real
 
-Vigas retas no plano (2D)
+---
 
-Estruturas isostáticas
+## 5. Funcionalidades Atuais
 
-Equilíbrio estático:
+Na versão atual, a aplicação permite:
 
-ΣFy = 0
+- Desenho livre da viga diretamente no canvas
+- Definição do comprimento real da estrutura
+- Inserção gráfica de:
+  - apoios do tipo pino, rolete e engaste
+  - cargas concentradas verticais
+- Conversão automática de coordenadas gráficas para valores reais
+- Cálculo das reações de apoio
+- Visualização gráfica das reações no próprio modelo estrutural
 
-ΣM = 0
+---
 
-Cargas concentradas verticais
+## 6. Limitações Atuais
 
-Apoios:
+O sistema, em sua versão atual, apresenta as seguintes limitações:
 
-pino
+- Análise restrita a vigas isostáticas
+- Apenas cargas concentradas são consideradas
+- Não há geração de diagramas de esforços internos
+- Não trata estruturas hiperestáticas
+- Não realiza verificação de tensões ou deformações
 
-rolete
+Essas limitações são **intencionais**, visando manter o foco didático e a clareza conceitual nas etapas iniciais do projeto.
 
-engaste (caso de balanço)
+---
 
-✏️ Funcionalidades Atuais
+## 7. Funcionalidades Planejadas
 
-Desenho livre da viga no canvas
+Estão previstas para versões futuras:
 
-Definição do comprimento real da viga
+- Diagramas de esforço cortante e momento fletor
+- Cargas distribuídas e momentos aplicados
+- Análise por método matricial
+- Extensão para:
+  - pórticos planos
+  - treliças
+  - grelhas
+  - arcos
+- Interface avançada para edição de propriedades
+- Exportação de resultados
 
-Inserção gráfica de:
+---
 
-apoios
+## 8. Tecnologias Utilizadas
 
-cargas concentradas
+- HTML5
+- CSS3
+- JavaScript (Vanilla)
+- Canvas API
+- GitHub Pages
 
-Conversão automática de coordenadas gráficas para valores reais
+A escolha por tecnologias nativas visa facilitar o entendimento do código e sua utilização como material de estudo.
 
-Cálculo das reações de apoio
+---
 
-Visualização das reações no canvas
+## 9. Estrutura do Projeto
+    /
+    ├── index.html
+    ├── style.css
+    ├── js/
+    │ └── app.js
+    ├── img/
+    ├── dialog-polyfill.js
+    ├── dialog-polyfill.css
+    ├── favicon.ico
+    └── README.md
 
-Estrutura de código preparada para expansão
+---
 
-🚧 Funcionalidades Planejadas
+## 10. Considerações Finais
 
-Diagramas de:
+Esta ferramenta possui **finalidade estritamente educacional**.  
+Os resultados obtidos não substituem softwares profissionais de cálculo estrutural e não devem ser utilizados para fins de projeto executivo.
 
-esforço cortante
+---
 
-momento fletor
+## 11. Contribuições
 
-Cargas distribuídas
+Sugestões, correções conceituais e melhorias são bem-vindas, especialmente aquelas que contribuam para a **qualidade didática e rigor técnico** da ferramenta.
 
-Momentos aplicados
+---
 
-Refatoração do solver para método matricial
+## 12. Licença
 
-Análise de:
+Projeto distribuído sob licença livre para fins educacionais e acadêmicos.
 
-pórticos
-
-treliças
-
-grelhas
-
-arcos
-
-Interface mais avançada para edição de propriedades
-
-Exportação de resultados
-
-🛠️ Tecnologias Utilizadas
-
-HTML5
-
-CSS3
-
-JavaScript (Vanilla)
-
-Canvas API
-
-GitHub Pages
