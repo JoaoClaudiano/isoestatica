@@ -124,6 +124,8 @@ A escolha por tecnologias nativas visa facilitar o entendimento do código e sua
     /
     ├── index.html
     ├── style.css
+    ├── css/
+    │ └── main.css
     ├── js/
     │ └── app.js
     └── README.md
