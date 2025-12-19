@@ -1,11 +1,13 @@
 /* =====================================================
-   ESTADO GLOBAL DA APLICAÇÃO
+   ESTADO GLOBAL
 ===================================================== */
 const appState = {
   mode: "parametric", // parametric | draw
+  tool: "draw-beam",  // draw-beam | add-support
   beam: {
-    length: null,     // comprimento real (m)
-    pixelLength: null // comprimento em pixels
+    length: null,
+    pixelLength: null,
+    supports: []
   },
   drawing: {
     isDrawing: false,
@@ -26,6 +28,9 @@ const scaleDialog = document.getElementById("scale-dialog");
 const realLengthInput = document.getElementById("real-length-input");
 const canvasHint = document.getElementById("canvas-hint");
 
+const toolAddSupportBtn = document.getElementById("tool-add-support");
+const toolDrawBeamBtn = document.getElementById("tool-draw-beam");
+
 /* =====================================================
    INICIALIZAÇÃO
 ===================================================== */
@@ -38,10 +43,18 @@ function init() {
 }
 
 /* =====================================================
-   REGISTRO DE EVENTOS
+   EVENTOS
 ===================================================== */
 function registerEvents() {
   inputModeSelect.addEventListener("change", onModeChange);
+
+  toolAddSupportBtn.addEventListener("click", () => {
+    appState.tool = "add-support";
+  });
+
+  toolDrawBeamBtn.addEventListener("click", () => {
+    appState.tool = "draw-beam";
+  });
 
   canvas.addEventListener("mousedown", onCanvasMouseDown);
   canvas.addEventListener("mousemove", onCanvasMouseMove);
@@ -72,18 +85,23 @@ function updateUIByMode() {
 }
 
 /* =====================================================
-   CANVAS – DESENHO DA VIGA
+   CANVAS – EVENTOS
 ===================================================== */
 function onCanvasMouseDown(e) {
   if (appState.mode !== "draw") return;
 
   const { x } = getMousePosition(e);
 
-  appState.drawing.isDrawing = true;
-  appState.drawing.startX = x;
-  appState.drawing.endX = x;
+  if (appState.tool === "draw-beam") {
+    appState.drawing.isDrawing = true;
+    appState.drawing.startX = x;
+    appState.drawing.endX = x;
+    canvasHint.style.display = "none";
+  }
 
-  canvasHint.style.display = "none";
+  if (appState.tool === "add-support") {
+    tryAddSupport(x);
+  }
 }
 
 function onCanvasMouseMove(e) {
@@ -104,13 +122,12 @@ function onCanvasMouseUp() {
     appState.drawing.endX - appState.drawing.startX
   );
 
-  if (lengthPx < 20) {
+  if (lengthPx < 30) {
     clearCanvas();
     return;
   }
 
   appState.beam.pixelLength = lengthPx;
-
   scaleDialog.showModal();
 }
 
@@ -140,52 +157,104 @@ function onScaleDialogClose() {
 }
 
 /* =====================================================
-   FUNÇÕES DE DESENHO
+   APOIOS
 ===================================================== */
+function tryAddSupport(xClick) {
+  if (!appState.beam.pixelLength) return;
+
+  const beamY = canvas.height / 2;
+  const beamStart = (canvas.width - appState.beam.pixelLength) / 2;
+  const beamEnd = beamStart + appState.beam.pixelLength;
+
+  if (xClick < beamStart || xClick > beamEnd) return;
+
+  const type = prompt(
+    "Tipo de apoio: pinned | roller | fixed",
+    "pinned"
+  );
+
+  if (!["pinned", "roller", "fixed"].includes(type)) return;
+
+  const xReal =
+    ((xClick - beamStart) / appState.beam.pixelLength) *
+    appState.beam.length;
+
+  appState.beam.supports.push({
+    type,
+    xPixel: xClick,
+    xReal
+  });
+
+  redrawScene();
+}
+
+/* =====================================================
+   DESENHO
+===================================================== */
+function redrawScene() {
+  clearCanvas();
+  drawFinalBeam();
+  drawSupports();
+}
+
 function redrawBeamPreview() {
   clearCanvas();
 
   const y = canvas.height / 2;
-  const x1 = appState.drawing.startX;
-  const x2 = appState.drawing.endX;
 
   ctx.strokeStyle = "#2563eb";
   ctx.lineWidth = 4;
 
   ctx.beginPath();
-  ctx.moveTo(x1, y);
-  ctx.lineTo(x2, y);
+  ctx.moveTo(appState.drawing.startX, y);
+  ctx.lineTo(appState.drawing.endX, y);
   ctx.stroke();
 }
 
 function drawFinalBeam() {
-  clearCanvas();
-
   const y = canvas.height / 2;
   const center = canvas.width / 2;
-  const halfLength = appState.beam.pixelLength / 2;
+  const half = appState.beam.pixelLength / 2;
 
   ctx.strokeStyle = "#0f172a";
   ctx.lineWidth = 4;
 
   ctx.beginPath();
-  ctx.moveTo(center - halfLength, y);
-  ctx.lineTo(center + halfLength, y);
+  ctx.moveTo(center - half, y);
+  ctx.lineTo(center + half, y);
   ctx.stroke();
 
-  drawBeamLabel(center, y);
-}
-
-function drawBeamLabel(x, y) {
   ctx.fillStyle = "#0f172a";
   ctx.font = "13px Arial";
   ctx.textAlign = "center";
+  ctx.fillText(`${appState.beam.length} m`, center, y - 12);
+}
 
-  ctx.fillText(
-    `${appState.beam.length} m`,
-    x,
-    y - 12
-  );
+function drawSupports() {
+  const y = canvas.height / 2;
+
+  appState.beam.supports.forEach(support => {
+    ctx.fillStyle = "#1e293b";
+
+    if (support.type === "pinned") {
+      ctx.beginPath();
+      ctx.moveTo(support.xPixel - 10, y + 20);
+      ctx.lineTo(support.xPixel + 10, y + 20);
+      ctx.lineTo(support.xPixel, y);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    if (support.type === "roller") {
+      ctx.beginPath();
+      ctx.arc(support.xPixel, y + 16, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (support.type === "fixed") {
+      ctx.fillRect(support.xPixel - 4, y - 20, 8, 40);
+    }
+  });
 }
 
 /* =====================================================
@@ -196,9 +265,11 @@ function clearCanvas() {
 }
 
 function resetDrawing() {
-  appState.drawing.isDrawing = false;
-  appState.beam.pixelLength = null;
-  appState.beam.length = null;
+  appState.beam = {
+    length: null,
+    pixelLength: null,
+    supports: []
+  };
   realLengthInput.value = "";
 }
 
