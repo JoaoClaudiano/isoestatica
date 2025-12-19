@@ -1,178 +1,42 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Calculadora Estrutural – Vigas</title>
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- CSS principal (novo) -->
-  <link rel="stylesheet" href="css/main.css">
-
-  <!-- Dialog polyfill (se quiser manter compatibilidade) -->
-  <link rel="stylesheet" href="vendor/dialog-polyfill/dialog-polyfill.css">
+  <meta charset="UTF-8" />
+  <title>Análise Estrutural Interativa</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
 
-<header class="app-header">
-  <h1>Calculadora Estrutural</h1>
-  <span class="subtitle">Vigas Isostáticas</span>
+<header>
+  <h1>Análise Estrutural — Vigas Isostáticas</h1>
 </header>
 
-<div class="app-container">
+<div id="app">
 
-  <!-- PAINEL ESQUERDO – CONFIGURAÇÕES -->
-  <aside class="panel panel-left">
-
-    <section class="panel-section">
-      <h3>Modo de Entrada</h3>
-      <select id="input-mode">
-        <option value="parametric" selected>Paramétrico</option>
-        <option value="draw">Desenhar na tela</option>
-      </select>
-    </section>
-
-    <section class="panel-section">
-      <h3>Unidades</h3>
-
-      <label>
-        Comprimento
-        <select id="length-unit">
-          <option value="mm">mm</option>
-          <option value="cm">cm</option>
-          <option value="m" selected>m</option>
-        </select>
-      </label>
-
-      <label>
-        Força
-        <select id="force-unit">
-          <option value="N">N</option>
-          <option value="kN" selected>kN</option>
-          <option value="MN">MN</option>
-        </select>
-      </label>
-    </section>
-
-    <section class="panel-section" id="geometry-section">
-      <h3>Geometria da Viga</h3>
-
-      <label>
-        Comprimento da viga
-        <input type="text" id="beam-length" placeholder="Ex: 6.00">
-      </label>
-    </section>
-
-    <section class="panel-section" id="supports-section">
-      <h3>Apoios</h3>
-
-      <label>
-        Apoio esquerdo
-        <select id="support-left">
-          <option value="pinned">Pino</option>
-          <option value="fixed">Engaste</option>
-          <option value="roller">Rolete</option>
-        </select>
-      </label>
-
-      <label>
-        Apoio direito
-        <select id="support-right">
-          <option value="pinned">Pino</option>
-          <option value="roller">Rolete</option>
-          <option value="fixed">Engaste</option>
-        </select>
-      </label>
-    </section>
-
+  <!-- PAINEL ESQUERDO -->
+  <aside id="sidebar">
+    <h2>Cargas</h2>
+    <div id="load-list">
+      <p class="hint">Selecione uma carga no desenho</p>
+    </div>
   </aside>
 
-  <!-- ÁREA CENTRAL – DESENHO / CANVAS -->
-  <main class="panel panel-center">
-
-    <div class="canvas-toolbar">
+  <!-- ÁREA PRINCIPAL -->
+  <main>
+    <div id="toolbar">
       <button id="tool-draw-beam">Viga</button>
       <button id="tool-add-support">Apoio</button>
-      <button id="tool-add-load">Carga</button>
-      <button id="tool-erase">Apagar</button>
+      <button id="tool-add-load">Carga Pontual</button>
+      <button id="tool-add-dist-load">Carga Distribuída</button>
+      <button id="solve-structure">Resolver</button>
+      <button id="draw-diagrams">Diagramas</button>
     </div>
 
-    <div class="canvas-container">
-      <canvas id="canvas" width="900" height="350"></canvas>
-      <div class="canvas-overlay" id="canvas-hint">
-        Desenhe a viga ou configure os parâmetros ao lado
-      </div>
-    </div>
-
-    <button class="solve-button" id="solve-structure">
-      Resolver estrutura
-    </button>
-
+    <canvas id="canvas" width="1000" height="600"></canvas>
   </main>
-
-  <!-- PAINEL DIREITO – CARGAS -->
-  <aside class="panel panel-right">
-
-    <section class="panel-section">
-      <h3>Cargas</h3>
-
-      <button class="load-btn" id="btn-add-point-load">
-        Carga Concentrada
-      </button>
-
-      <button class="load-btn" id="btn-add-distributed-load">
-        Carga Distribuída
-      </button>
-
-      <button class="load-btn" id="btn-add-moment">
-        Momento Aplicado
-      </button>
-    </section>
-
-    <section class="panel-section">
-      <h3>Lista de Cargas</h3>
-      <ul id="load-list">
-        <li class="empty">Nenhuma carga adicionada</li>
-      </ul>
-    </section>
-
-  </aside>
 
 </div>
 
-<!-- DIALOG – DEFINIR COMPRIMENTO APÓS DESENHO -->
-<dialog id="scale-dialog">
-  <form method="dialog">
-    <h3>Definir comprimento real</h3>
-
-    <p>
-      Informe o comprimento real da viga desenhada:
-    </p>
-
-    <label>
-      Comprimento
-      <input type="text" id="real-length-input" placeholder="Ex: 8.00">
-    </label>
-
-    <menu>
-      <button value="confirm">Confirmar</button>
-      <button value="cancel">Cancelar</button>
-    </menu>
-  </form>
-</dialog>
-
-<!-- DIALOG – MENSAGENS -->
-<dialog id="message-dialog">
-  <p id="message-text"></p>
-  <menu>
-    <button>OK</button>
-  </menu>
-</dialog>
-
-<!-- JS -->
-<script src="vendor/dialog-polyfill/dialog-polyfill.js"></script>
-<script type="module" src="js/app.js"></script>
-
+<script src="js/app.js"></script>
 </body>
 </html>
