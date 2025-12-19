@@ -1,0 +1,282 @@
+/* =====================================================
+   RESET BÁSICO
+===================================================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  background-color: #f3f5f7;
+  color: #1f2933;
+}
+
+/* =====================================================
+   HEADER
+===================================================== */
+.app-header {
+  background-color: #0f172a;
+  color: #ffffff;
+  padding: 14px 24px;
+  border-bottom: 3px solid #2563eb;
+}
+
+.app-header h1 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.app-header .subtitle {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+/* =====================================================
+   LAYOUT PRINCIPAL
+===================================================== */
+.app-container {
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  height: calc(100vh - 64px);
+}
+
+/* =====================================================
+   PAINÉIS
+===================================================== */
+.panel {
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.panel-left {
+  background-color: #ffffff;
+  border-right: 1px solid #e5e7eb;
+}
+
+.panel-right {
+  background-color: #ffffff;
+  border-left: 1px solid #e5e7eb;
+}
+
+.panel-center {
+  background-color: #eef2f7;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* =====================================================
+   SEÇÕES DOS PAINÉIS
+===================================================== */
+.panel-section {
+  margin-bottom: 20px;
+}
+
+.panel-section h3 {
+  font-size: 14px;
+  margin-bottom: 10px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e5e7eb;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #334155;
+}
+
+/* =====================================================
+   INPUTS E SELECTS
+===================================================== */
+label {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  margin-bottom: 10px;
+  gap: 4px;
+}
+
+input[type="text"],
+select {
+  padding: 7px 8px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  font-size: 13px;
+  background-color: #ffffff;
+}
+
+input[type="text"]:focus,
+select:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+/* =====================================================
+   TOOLBAR DO CANVAS
+===================================================== */
+.canvas-toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.canvas-toolbar button {
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+.canvas-toolbar button:hover {
+  background-color: #e0e7ff;
+  border-color: #2563eb;
+}
+
+/* =====================================================
+   CANVAS
+===================================================== */
+.canvas-container {
+  position: relative;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+#canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px dashed #cbd5e1;
+  cursor: crosshair;
+}
+
+/* Texto de ajuda sobre o canvas */
+.canvas-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #64748b;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* =====================================================
+   BOTÃO DE RESOLVER
+===================================================== */
+.solve-button {
+  align-self: flex-end;
+  padding: 10px 18px;
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.solve-button:hover {
+  background-color: #1d4ed8;
+}
+
+/* =====================================================
+   BOTÕES DE CARGA
+===================================================== */
+.load-btn {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 8px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.load-btn:hover {
+  background-color: #e0f2fe;
+  border-color: #0284c7;
+}
+
+/* =====================================================
+   LISTA DE CARGAS
+===================================================== */
+#load-list {
+  list-style: none;
+  font-size: 13px;
+}
+
+#load-list li {
+  padding: 6px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+#load-list li.empty {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* =====================================================
+   DIALOG
+===================================================== */
+dialog {
+  border: none;
+  border-radius: 8px;
+  padding: 16px;
+  width: 320px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+dialog h3 {
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+dialog p {
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+dialog menu {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+dialog button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+
+dialog button[value="confirm"] {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+dialog button[value="cancel"] {
+  background-color: #e5e7eb;
+}
+
+/* =====================================================
+   RESPONSIVO (BÁSICO)
+===================================================== */
+@media (max-width: 1100px) {
+  .app-container {
+    grid-template-columns: 240px 1fr;
+  }
+
+  .panel-right {
+    display: none;
+  }
+}
