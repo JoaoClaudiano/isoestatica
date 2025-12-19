@@ -126,10 +126,6 @@ A escolha por tecnologias nativas visa facilitar o entendimento do código e sua
     ├── style.css
     ├── js/
     │ └── app.js
-    ├── img/
-    ├── dialog-polyfill.js
-    ├── dialog-polyfill.css
-    ├── favicon.ico
     └── README.md
 
 ---
