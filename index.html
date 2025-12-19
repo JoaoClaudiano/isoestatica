@@ -1,181 +1,178 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Vigas Interativa</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Bibliotecas -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.7.0/math.min.js"></script>
-    
-    <!-- Nossos scripts -->
-    <script src="beam/BeamSolver.js"></script>
-    <script src="beam/DiagramCalculator.js"></script>
-    <script src="beam/Units.js"></script>
-    <script src="ui/CanvasManager.js"></script>
-    <script src="ui/Toolbox.js"></script>
-    <script src="ui/PropertiesPanel.js"></script>
+  <meta charset="UTF-8">
+  <title>Calculadora Estrutural – Vigas</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- CSS principal (novo) -->
+  <link rel="stylesheet" href="css/main.css">
+
+  <!-- Dialog polyfill (se quiser manter compatibilidade) -->
+  <link rel="stylesheet" href="vendor/dialog-polyfill/dialog-polyfill.css">
 </head>
+
 <body>
-    <div class="container">
-        <!-- Cabeçalho -->
-        <header>
-            <h1><i class="fas fa-ruler-combined"></i> Calculadora de Vigas</h1>
-            <p class="subtitle">Desenhe, configure e analise vigas com cálculo automático de reações e diagramas</p>
-        </header>
 
-        <div class="main-content">
-            <!-- Painel Esquerdo - Ferramentas -->
-            <div class="left-panel">
-                <div class="tool-section">
-                    <h3><i class="fas fa-tools"></i> Ferramentas</h3>
-                    <div class="tool-grid" id="toolbox">
-                        <!-- As ferramentas serão inseridas aqui via JS -->
-                    </div>
-                </div>
+<header class="app-header">
+  <h1>Calculadora Estrutural</h1>
+  <span class="subtitle">Vigas Isostáticas</span>
+</header>
 
-                <div class="properties-section">
-                    <h3><i class="fas fa-sliders-h"></i> Propriedades</h3>
-                    <div id="properties-panel">
-                        <p>Selecione um elemento para editar suas propriedades.</p>
-                    </div>
-                </div>
-            </div>
+<div class="app-container">
 
-            <!-- Painel Central - Canvas e Controles -->
-            <div class="center-panel">
-                <!-- Controles da Viga -->
-                <div class="beam-controls">
-                    <div class="control-group">
-                        <label for="beam-length"><i class="fas fa-ruler-horizontal"></i> Comprimento (m):</label>
-                        <input type="number" id="beam-length" min="1" max="50" step="0.5" value="10">
-                        <button id="update-beam" class="btn btn-primary">
-                            <i class="fas fa-sync-alt"></i> Atualizar
-                        </button>
-                    </div>
-                    
-                    <div class="control-group">
-                        <label for="unit-select"><i class="fas fa-balance-scale"></i> Unidades:</label>
-                        <select id="unit-select">
-                            <option value="kN">kN/m</option>
-                            <option value="N">N/m</option>
-                            <option value="kgf">kgf/m</option>
-                        </select>
-                    </div>
-                    
-                    <button id="calculate-btn" class="btn btn-success">
-                        <i class="fas fa-calculator"></i> Calcular Reações
-                    </button>
-                    
-                    <button id="clear-all" class="btn btn-danger">
-                        <i class="fas fa-trash-alt"></i> Limpar Tudo
-                    </button>
-                </div>
+  <!-- PAINEL ESQUERDO – CONFIGURAÇÕES -->
+  <aside class="panel panel-left">
 
-                <!-- Canvas para desenho -->
-                <div class="canvas-container">
-                    <div class="canvas-header">
-                        <span><i class="fas fa-drafting-compass"></i> Área de Desenho</span>
-                        <span class="coordinates" id="coords">X: 0, Y: 0</span>
-                    </div>
-                    <canvas id="main-canvas" width="900" height="400"></canvas>
-                    <div class="canvas-footer">
-                        <div class="scale-indicator">
-                            <span>Escala: 1m = <span id="scale-value">50</span>px</span>
-                            <input type="range" id="scale-slider" min="20" max="100" value="50">
-                        </div>
-                    </div>
-                </div>
+    <section class="panel-section">
+      <h3>Modo de Entrada</h3>
+      <select id="input-mode">
+        <option value="parametric" selected>Paramétrico</option>
+        <option value="draw">Desenhar na tela</option>
+      </select>
+    </section>
 
-                <!-- Resultados -->
-                <div class="results-section">
-                    <h3><i class="fas fa-chart-line"></i> Resultados</h3>
-                    <div id="reactions-result" class="results-box">
-                        <div class="loading" id="loading-results">
-                            <i class="fas fa-cog fa-spin"></i> Clique em "Calcular Reações"
-                        </div>
-                        <div id="reactions-output"></div>
-                    </div>
-                </div>
-            </div>
+    <section class="panel-section">
+      <h3>Unidades</h3>
 
-            <!-- Painel Direito - Diagramas -->
-            <div class="right-panel">
-                <div class="diagrams-section">
-                    <h3><i class="fas fa-chart-area"></i> Diagramas</h3>
-                    
-                    <div class="diagram-tabs">
-                        <button class="tab-btn active" data-tab="shear"><i class="fas fa-chart-bar"></i> Cortante</button>
-                        <button class="tab-btn" data-tab="moment"><i class="fas fa-wave-square"></i> Momento</button>
-                        <button class="tab-btn" data-tab="normal"><i class="fas fa-compress-alt"></i> Normal</button>
-                    </div>
-                    
-                    <div class="diagram-container">
-                        <canvas id="shear-chart"></canvas>
-                        <canvas id="moment-chart" style="display: none;"></canvas>
-                        <canvas id="normal-chart" style="display: none;"></canvas>
-                    </div>
-                    
-                    <div class="max-values" id="max-values">
-                        <p>Valores máximos aparecerão aqui após cálculo.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+      <label>
+        Comprimento
+        <select id="length-unit">
+          <option value="mm">mm</option>
+          <option value="cm">cm</option>
+          <option value="m" selected>m</option>
+        </select>
+      </label>
 
-        <!-- Rodapé -->
-        <footer>
-            <div class="footer-content">
-                <p><i class="fas fa-code"></i> Desenvolvido para GitHub Pages - Análise de Vigas Isostáticas</p>
-                <p class="footer-info">
-                    <i class="fas fa-info-circle"></i> 
-                    Equações: ΣFy = 0, ΣM = 0 | 
-                    <i class="fas fa-download"></i> 
-                    <a href="#" id="export-png">Exportar PNG</a> | 
-                    <button id="show-help" class="btn-text">
-                        <i class="fas fa-question-circle"></i> Ajuda
-                    </button>
-                </p>
-            </div>
-        </footer>
+      <label>
+        Força
+        <select id="force-unit">
+          <option value="N">N</option>
+          <option value="kN" selected>kN</option>
+          <option value="MN">MN</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="panel-section" id="geometry-section">
+      <h3>Geometria da Viga</h3>
+
+      <label>
+        Comprimento da viga
+        <input type="text" id="beam-length" placeholder="Ex: 6.00">
+      </label>
+    </section>
+
+    <section class="panel-section" id="supports-section">
+      <h3>Apoios</h3>
+
+      <label>
+        Apoio esquerdo
+        <select id="support-left">
+          <option value="pinned">Pino</option>
+          <option value="fixed">Engaste</option>
+          <option value="roller">Rolete</option>
+        </select>
+      </label>
+
+      <label>
+        Apoio direito
+        <select id="support-right">
+          <option value="pinned">Pino</option>
+          <option value="roller">Rolete</option>
+          <option value="fixed">Engaste</option>
+        </select>
+      </label>
+    </section>
+
+  </aside>
+
+  <!-- ÁREA CENTRAL – DESENHO / CANVAS -->
+  <main class="panel panel-center">
+
+    <div class="canvas-toolbar">
+      <button id="tool-draw-beam">Viga</button>
+      <button id="tool-add-support">Apoio</button>
+      <button id="tool-add-load">Carga</button>
+      <button id="tool-erase">Apagar</button>
     </div>
 
-    <!-- Modal de Ajuda -->
-    <div id="help-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-question-circle"></i> Como usar</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <h4><i class="fas fa-play-circle"></i> Passo a Passo:</h4>
-                <ol>
-                    <li><strong>Defina o comprimento da viga</strong> no campo superior</li>
-                    <li><strong>Adicione apoios</strong> clicando nos ícones e arrastando para a viga</li>
-                    <li><strong>Adicione cargas</strong> (concentradas ou distribuídas)</li>
-                    <li><strong>Clique em "Calcular Reações"</strong> para ver os resultados</li>
-                    <li><strong>Visualize os diagramas</strong> nas abas à direita</li>
-                </ol>
-                
-                <h4><i class="fas fa-shapes"></i> Elementos disponíveis:</h4>
-                <ul>
-                    <li><i class="fas fa-grip-lines-vertical"></i> <strong>Apoio Fixo</strong> - Restringe translações e rotação</li>
-                    <li><i class="fas fa-circle"></i> <strong>Apoio Móvel</strong> - Restringe apenas translação vertical</li>
-                    <li><i class="fas fa-arrow-down"></i> <strong>Carga Concentrada</strong> - Força aplicada em um ponto</li>
-                    <li><i class="fas fa-arrows-alt-h"></i> <strong>Carga Distribuída</strong> - Força distribuída por comprimento</li>
-                    <li><i class="fas fa-redo"></i> <strong>Momento</strong> - Momento fletor aplicado</li>
-                </ul>
-                
-                <p class="note"><i class="fas fa-lightbulb"></i> Dica: Clique em qualquer elemento para editar suas propriedades!</p>
-            </div>
-        </div>
+    <div class="canvas-container">
+      <canvas id="canvas" width="900" height="350"></canvas>
+      <div class="canvas-overlay" id="canvas-hint">
+        Desenhe a viga ou configure os parâmetros ao lado
+      </div>
     </div>
 
-    <!-- Script principal -->
-    <script src="app.js"></script>
+    <button class="solve-button" id="solve-structure">
+      Resolver estrutura
+    </button>
+
+  </main>
+
+  <!-- PAINEL DIREITO – CARGAS -->
+  <aside class="panel panel-right">
+
+    <section class="panel-section">
+      <h3>Cargas</h3>
+
+      <button class="load-btn" id="btn-add-point-load">
+        Carga Concentrada
+      </button>
+
+      <button class="load-btn" id="btn-add-distributed-load">
+        Carga Distribuída
+      </button>
+
+      <button class="load-btn" id="btn-add-moment">
+        Momento Aplicado
+      </button>
+    </section>
+
+    <section class="panel-section">
+      <h3>Lista de Cargas</h3>
+      <ul id="load-list">
+        <li class="empty">Nenhuma carga adicionada</li>
+      </ul>
+    </section>
+
+  </aside>
+
+</div>
+
+<!-- DIALOG – DEFINIR COMPRIMENTO APÓS DESENHO -->
+<dialog id="scale-dialog">
+  <form method="dialog">
+    <h3>Definir comprimento real</h3>
+
+    <p>
+      Informe o comprimento real da viga desenhada:
+    </p>
+
+    <label>
+      Comprimento
+      <input type="text" id="real-length-input" placeholder="Ex: 8.00">
+    </label>
+
+    <menu>
+      <button value="confirm">Confirmar</button>
+      <button value="cancel">Cancelar</button>
+    </menu>
+  </form>
+</dialog>
+
+<!-- DIALOG – MENSAGENS -->
+<dialog id="message-dialog">
+  <p id="message-text"></p>
+  <menu>
+    <button>OK</button>
+  </menu>
+</dialog>
+
+<!-- JS -->
+<script src="vendor/dialog-polyfill/dialog-polyfill.js"></script>
+<script type="module" src="js/app.js"></script>
+
 </body>
 </html>
