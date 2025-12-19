@@ -123,9 +123,8 @@ A escolha por tecnologias nativas visa facilitar o entendimento do código e sua
 ## 9. Estrutura do Projeto
     /
     ├── index.html
-    ├── style.css
     ├── css/
-    │ └── main.css
+    │ └── sttyle.css
     ├── js/
     │ └── app.js
     └── README.md
