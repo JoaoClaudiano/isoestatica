@@ -1,58 +1,27 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Análise Estrutural Interativa</title>
-  <link rel="stylesheet" href="css/style.css">
+<meta charset="UTF-8">
+<title>Estrutura Interativa</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header>
-  <h1>Análise Estrutural — Vigas Isostáticas</h1>
-</header>
+<canvas id="canvas" width="900" height="500"></canvas>
 
-<div id="layout">
-
-  <!-- PAINEL LATERAL -->
-  <aside id="sidebar">
-
-    <section>
-      <h2>Viga</h2>
-      <label>Comprimento (m)</label>
-      <input id="beam-length" type="number" value="5" step="0.1">
-      <button id="create-beam">Criar / Atualizar Viga</button>
-    </section>
-
-    <section>
-      <h2>Apoios</h2>
-      <p class="hint">Clique na viga para inserir</p>
-      <button data-tool="support-left">Apoio esquerdo</button>
-      <button data-tool="support-right">Apoio direito</button>
-    </section>
-
-    <section>
-      <h2>Cargas</h2>
-      <button data-tool="load-point">Carga pontual</button>
-    </section>
-
-    <section>
-      <button id="solve">Resolver e gerar diagramas</button>
-    </section>
-
-  </aside>
-
-  <!-- ÁREA PRINCIPAL -->
-  <main>
-    <canvas id="canvas" width="1000" height="350"></canvas>
-
-    <div id="diagrams">
-      <canvas id="shearCanvas" width="1000" height="180"></canvas>
-      <canvas id="momentCanvas" width="1000" height="180"></canvas>
-    </div>
-  </main>
-
+<div id="infoCard">
+  <h3>Como calcular reações de apoio e momentos</h3>
+  <p>
+    Em uma estrutura de vigas, cada nó possui graus de liberdade: deslocamentos horizontais (X), verticais (Y) e rotação (Momento).  
+    As <strong>reações de apoio</strong> são determinadas impondo as restrições dos apoios (fixos, deslizantes ou livres).  
+    O método matricial usado aqui monta a <em>matriz de rigidez global</em> (K) da estrutura e resolve o sistema K·u = F, onde u são os deslocamentos e F as cargas aplicadas.  
+  </p>
+  <p>
+    O <strong>momento</strong> em um nó é calculado considerando a rotação do nó e a rigidez à flexão do elemento conectado.  
+    A combinação de forças e momentos nos apoios garante que a estrutura esteja em equilíbrio, respeitando as leis de Newton e a compatibilidade de deformações.
+  </p>
 </div>
 
-<script src="js/app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
