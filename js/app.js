@@ -1,250 +1,221 @@
-/* =====================================================
+/* =======================================
    UTILIDADES MATRICIAIS
-===================================================== */
-function zeros(n, m) {
-  return Array.from({ length: n }, () => Array(m).fill(0));
-}
-function transpose(A) { return A[0].map((_, i) => A.map(r => r[i])); }
-function multiply(A, B) {
-  const C = zeros(A.length, B[0].length);
-  for (let i = 0; i < A.length; i++)
-    for (let j = 0; j < B[0].length; j++)
-      for (let k = 0; k < B.length; k++)
-        C[i][j] += A[i][k] * B[k][j];
+======================================= */
+function zeros(n,m){return Array.from({length:n},()=>Array(m).fill(0));}
+function transpose(A){return A[0].map((_,i)=>A.map(r=>r[i]));}
+function multiply(A,B){
+  const C=zeros(A.length,B[0].length);
+  for(let i=0;i<A.length;i++)
+    for(let j=0;j<B[0].length;j++)
+      for(let k=0;k<B.length;k++)
+        C[i][j]+=A[i][k]*B[k][j];
   return C;
 }
 
-/* =====================================================
+/* =======================================
    MODELO
-===================================================== */
-const model = { nodes: [], elements: [], supports: [], loads: [] };
+======================================= */
+const model={nodes:[],elements:[],supports:[],loads:[],hinges:[]};
 
-/* =====================================================
-   EDIÇÃO DE APOIOS
-===================================================== */
-function setSupport(nodeId, fixX, fixY, fixM) {
-  const sup = model.supports.find(s => s.node.id === nodeId);
-  if (sup) sup.fixed = [fixX, fixY, fixM];
-  else {
-    const node = model.nodes.find(n => n.id === nodeId);
-    if (!node) throw new Error("Nó não encontrado");
-    model.supports.push({ node, fixed: [fixX, fixY, fixM] });
+/* =======================================
+   VARIÁVEIS DE CONTROLE
+======================================= */
+let canvas=document.getElementById("canvas");
+let ctx=canvas.getContext("2d");
+let showEfforts=true;
+let drawMode=null;
+let selectedNodesForBeam=[];
+
+/* =======================================
+   INTERAÇÃO USUÁRIO
+======================================= */
+function addNodePrompt(){
+  const x=parseFloat(prompt("Posição X do nó (m):"));
+  const y=parseFloat(prompt("Posição Y do nó (m):"));
+  if(isNaN(x)||isNaN(y)) return;
+  const id=model.nodes.length+1;
+  const type=prompt("Tipo de apoio: fixo, desl. horizontal, desl. vertical, livre","fixo");
+  const fixed=[false,false,false];
+  if(type==="fixo") fixed[0]=fixed[1]=fixed[2]=true;
+  else if(type==="desl. horizontal") fixed[1]=fixed[2]=true;
+  else if(type==="desl. vertical") fixed[0]=fixed[2]=true;
+  else fixed[0]=fixed[1]=fixed[2]=false;
+  const node={id,x,y};
+  model.nodes.push(node);
+  if(type!=="livre") model.supports.push({node,fixed,reactions:{Fx:0,Fy:0,Mz:0}});
+  draw();
+  updateRightSidebar();
+  solveStructure();
+}
+
+function startDrawBeam(){
+  drawMode="beam";
+  selectedNodesForBeam=[];
+  alert("Clique em dois nós/apoios para criar a viga.");
+}
+
+canvas.addEventListener("click", e=>{
+  const rect=canvas.getBoundingClientRect();
+  const mouseX=(e.clientX-rect.left);
+  const mouseY=(e.clientY-rect.top);
+  if(drawMode==="beam"){
+    let nearest=findNearestNode(mouseX,mouseY);
+    if(!nearest) return;
+    selectedNodesForBeam.push(nearest);
+    if(selectedNodesForBeam.length===2){
+      let confirmed=confirm(`Criar viga entre Nó ${selectedNodesForBeam[0].id} e Nó ${selectedNodesForBeam[1].id}?`);
+      if(confirmed){
+        model.elements.push({n1:selectedNodesForBeam[0],n2:selectedNodesForBeam[1],E:210e6,A:0.02,I:8e-4});
+        updateRightSidebar();
+        draw();
+        solveStructure();
+      }
+      selectedNodesForBeam=[];
+      drawMode=null;
+    }
   }
-}
-
-/* =====================================================
-   EDIÇÃO INTERATIVA DE CARGAS
-===================================================== */
-let selectedLoad = null;
-let dragType = null;
-
-function addLoad(nodeId, valueX=0, valueY=0, moment=0) {
-  const node = model.nodes.find(n => n.id === nodeId);
-  if (!node) throw new Error("Nó não encontrado");
-  model.loads.push({ node, valueX, valueY, moment });
-}
-
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-canvas.addEventListener("mousedown", e => {
-  const pos = { x: e.offsetX, y: e.offsetY };
-  selectedLoad = model.loads.find(l => Math.abs(l.node.x - pos.x) < 10 && Math.abs(l.node.y - pos.y) < 10);
-  if (selectedLoad) dragType = 'force';
 });
 
-canvas.addEventListener("mousemove", e => {
-  if (selectedLoad && dragType==='force') {
-    const dx = e.offsetX - selectedLoad.node.x;
-    const dy = selectedLoad.node.y - e.offsetY; 
-    selectedLoad.valueX = dx / 5; 
-    selectedLoad.valueY = dy / 5; 
-    solveStructure(); draw();
-  }
-});
-
-canvas.addEventListener("mouseup", e => { selectedLoad = null; dragType=null; });
-
-/* =====================================================
-   SOLVER MATRICIAL + REAÇÕES
-===================================================== */
-function solveStructure() {
-  const dofMap = new Map();
-  let dofCount = 0;
-  model.nodes.forEach(n => { dofMap.set(n.id, [dofCount, dofCount+1, dofCount+2]); dofCount+=3; });
-
-  let K = zeros(dofCount, dofCount);
-  let F = Array(dofCount).fill(0);
-
-  model.elements.forEach(el => {
-    const { n1, n2 } = el;
-    const dx = n2.x - n1.x; const dy = n2.y - n1.y;
-    const L = Math.hypot(dx, dy); const c = dx/L; const s = dy/L;
-    const E = el.E||210e6, A=el.A||0.02, I=el.I||8e-4;
-
-    const kL = [
-      [A*E/L,0,0,-A*E/L,0,0],
-      [0,12*E*I/L**3,6*E*I/L**2,0,-12*E*I/L**3,6*E*I/L**2],
-      [0,6*E*I/L**2,4*E*I/L,0,-6*E*I/L**2,2*E*I/L],
-      [-A*E/L,0,0,A*E/L,0,0],
-      [0,-12*E*I/L**3,-6*E*I/L**2,0,12*E*I/L**3,-6*E*I/L**2],
-      [0,6*E*I/L**2,2*E*I/L,0,-6*E*I/L**2,4*E*I/L]
-    ];
-    const T = [[c,s,0,0,0,0],[-s,c,0,0,0,0],[0,0,1,0,0,0],[0,0,0,c,s,0],[0,0,0,-s,c,0],[0,0,0,0,0,1]];
-    const kG = multiply(transpose(T), multiply(kL, T));
-    const dofs = [...dofMap.get(n1.id), ...dofMap.get(n2.id)];
-    dofs.forEach((I,i)=>dofs.forEach((J,j)=>{ K[I][J]+=kG[i][j]; }));
-  });
-
-  model.loads.forEach(l => {
-    const d = dofMap.get(l.node.id);
-    F[d[0]] += l.valueX; F[d[1]] += l.valueY; 
-  });
-
-  model.supports.forEach(s => {
-    const d = dofMap.get(s.node.id);
-    s.fixed.forEach((fix,i)=>{
-      if(fix){ const k=d[i]; K[k].fill(0); K.forEach(r=>r[k]=0); K[k][k]=1; F[k]=0; }
-    });
-  });
-
-  const u = gaussianElimination(K.map(r=>[...r]), [...F]);
-  const Ku = multiply(K, u.map(v=>[v])).map(v=>v[0]);
-  const R = Ku.map((v,i)=>v-F[i]);
-  model.supports.forEach(s=>{
-    const d = dofMap.get(s.node.id);
-    s.reactions={ Fx: s.fixed[0]?R[d[0]]:0, Fy:s.fixed[1]?R[d[1]]:0, Mz:s.fixed[2]?R[d[2]]:0 };
-  });
+/* Cargas */
+function addLoadPrompt(){
+  const id=parseInt(prompt("ID do nó para carga:"));
+  const node=model.nodes.find(n=>n.id===id);
+  if(!node) return;
+  const fx=parseFloat(prompt("Força X (kN):"))||0;
+  const fy=parseFloat(prompt("Força Y (kN):"))||0;
+  model.loads.push({node,value:fy}); // para simplificação Fy, Fx pode ser estendido
+  draw();
+  solveStructure();
+  updateMemoryCard();
+  updateRightSidebar();
 }
 
-/* =====================================================
-   FUNÇÃO DE DESENHO AVANÇADO
-===================================================== */
-function drawGrid(ctx, width, height, step=25) {
-  ctx.strokeStyle = "#eee";
-  ctx.lineWidth = 0.5;
-  for(let x=0;x<=width;x+=step){
-    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,height); ctx.stroke();
-  }
-  for(let y=0;y<=height;y+=step){
-    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(width,y); ctx.stroke();
-  }
+function addDistLoadPrompt(){
+  const beamIndex=parseInt(prompt("Número da viga:"))-1;
+  const beam=model.elements[beamIndex];
+  if(!beam) return;
+  const start=parseFloat(prompt("Início da carga (m, relativo à viga):"))||0;
+  const end=parseFloat(prompt("Fim da carga (m):"))||1;
+  const magnitude=parseFloat(prompt("Magnitude (kN/m):"))||0;
+  if(!beam.distLoads) beam.distLoads=[];
+  beam.distLoads.push({start,end,magnitude});
+  draw();
 }
 
-function draw() {
+function addMomentPrompt(){
+  const id=parseInt(prompt("ID do nó para momento:"));
+  const node=model.nodes.find(n=>n.id===id);
+  if(!node) return;
+  const M=parseFloat(prompt("Momento aplicado (kN·m):"))||0;
+  if(!node.moments) node.moments=[];
+  node.moments.push(M);
+  draw();
+}
+
+function addHingePrompt(){
+  const beamIndex=parseInt(prompt("Número da viga para rótula:"))-1;
+  const beam=model.elements[beamIndex];
+  if(!beam) return;
+  const pos=parseFloat(prompt("Posição da rótula na viga (m, 0=start, 1=end):"))||0.5;
+  if(!beam.hinges) beam.hinges=[];
+  beam.hinges.push(pos);
+  draw();
+}
+
+/* =======================================
+   DESENHO
+======================================= */
+function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  drawGrid(ctx, canvas.width, canvas.height);
 
-  // Elementos (vigas)
-  ctx.strokeStyle="black";
-  ctx.lineWidth=2;
+  // Vigas
   model.elements.forEach(el=>{
     ctx.beginPath();
     ctx.moveTo(el.n1.x,el.n1.y);
     ctx.lineTo(el.n2.x,el.n2.y);
+    ctx.strokeStyle="#005b96";
+    ctx.lineWidth=4;
     ctx.stroke();
 
-    // Gráficos de esforços simplificados (educativo)
-    const nx = el.n2.x - el.n1.x;
-    const ny = el.n2.y - el.n1.y;
-    const length = Math.hypot(nx, ny);
-    const angle = Math.atan2(ny, nx);
-
-    // Função para converter valor de esforço em pixels
-    const scale = 0.02;
-
-    // Desenhar momento fletor
-    ctx.strokeStyle = "purple";
-    ctx.beginPath();
-    for(let t=0;t<=1;t+=0.05){
-      const x = el.n1.x + nx*t;
-      const y = el.n1.y + ny*t - scale*50*Math.sin(Math.PI*t); // curva senoidal para momento
-      if(t===0) ctx.moveTo(x,y);
-      else ctx.lineTo(x,y);
-    }
-    ctx.stroke();
-    ctx.fillText("M", el.n1.x + nx/2, el.n1.y - 55);
-
-    // Desenhar cortante
-    ctx.strokeStyle = "orange";
-    ctx.beginPath();
-    ctx.moveTo(el.n1.x, el.n1.y - scale*30);
-    ctx.lineTo(el.n2.x, el.n2.y - scale*30);
-    ctx.stroke();
-    ctx.fillText("V", el.n2.x + 5, el.n2.y - 30);
-
-    // Desenhar normal
-    ctx.strokeStyle = "green";
-    ctx.beginPath();
-    ctx.moveTo(el.n1.x, el.n1.y);
-    ctx.lineTo(el.n2.x, el.n2.y);
-    ctx.stroke();
-    ctx.fillText("N", el.n2.x + 5, el.n2.y + 15);
+    // Rótulas
+    if(el.hinges) el.hinges.forEach(p=>{
+      const x=el.n1.x+(el.n2.x-el.n1.x)*p;
+      const y=el.n1.y+(el.n2.y-el.n1.y)*p;
+      ctx.beginPath();
+      ctx.arc(x,y,6,0,2*Math.PI);
+      ctx.fillStyle="red";
+      ctx.fill();
+    });
   });
 
-  // Nós
-  ctx.fillStyle="blue";
+  // Nós/apoios
   model.nodes.forEach(n=>{
     ctx.beginPath();
-    ctx.arc(n.x,n.y,6,0,Math.PI*2);
+    ctx.arc(n.x,n.y,6,0,2*Math.PI);
+    ctx.fillStyle="#007acc";
     ctx.fill();
-  });
-
-  // Apoios
-  model.supports.forEach(s=>{
-    const {x,y}=s.node;
-    ctx.fillStyle="green"; ctx.fillRect(x-8,y+5,16,8);
-  });
-
-  // Cargas
-  model.loads.forEach(l=>{
-    const {x,y}=l.node;
-    ctx.strokeStyle="red"; ctx.lineWidth=2;
-    ctx.beginPath();
-    ctx.moveTo(x,y);
-    ctx.lineTo(x+l.valueX*5, y-l.valueY*5);
+    ctx.strokeStyle="#003f5c";
     ctx.stroke();
-    ctx.fillStyle="red";
-    ctx.fillText(`Fx:${l.valueX.toFixed(1)}, Fy:${l.valueY.toFixed(1)}`, x+5, y-5);
+  });
+
+  // Cargas concentradas (somente Fy mostrado)
+  model.loads.forEach(l=>{
+    ctx.beginPath();
+    ctx.moveTo(l.node.x,l.node.y);
+    ctx.lineTo(l.node.x,l.node.y-20*l.value/10);
+    ctx.strokeStyle="orange";
+    ctx.lineWidth=2;
+    ctx.stroke();
   });
 }
 
-/* =====================================================
-   GAUSS
-===================================================== */
-function gaussianElimination(A,b){
-  const n=b.length;
-  for(let i=0;i<n;i++){
-    let max=i;
-    for(let k=i+1;k<n;k++) if(Math.abs(A[k][i])>Math.abs(A[max][i])) max=k;
-    [A[i],A[max]]=[A[max],A[i]];
-    [b[i],b[max]]=[b[max],b[i]];
-    for(let k=i+1;k<n;k++){
-      const f=A[k][i]/A[i][i];
-      for(let j=i;j<n;j++) A[k][j]-=f*A[i][j];
-      b[k]-=f*b[i];
-    }
-  }
-  const x=Array(n).fill(0);
-  for(let i=n-1;i>=0;i--){
-    x[i]=b[i]; for(let j=i+1;j<n;j++) x[i]-=A[i][j]*x[j]; x[i]/=A[i][i];
-  }
-  return x;
+/* =======================================
+   UTILIDADES
+======================================= */
+function findNearestNode(x,y){
+  let minDist=Infinity;
+  let nearest=null;
+  model.nodes.forEach(n=>{
+    const dx=n.x-x;
+    const dy=n.y-y;
+    const d=Math.sqrt(dx*dx+dy*dy);
+    if(d<minDist && d<20){ minDist=d; nearest=n; }
+  });
+  return nearest;
 }
 
-/* =====================================================
-   EXEMPLO DE USO
-===================================================== */
-model.nodes.push({id:1,x:100,y:400});
-model.nodes.push({id:2,x:400,y:400});
-model.nodes.push({id:3,x:700,y:400});
+/* =======================================
+   SOLVER (simplificado)
+======================================= */
+function solveStructure(){
+  // Para simplificação apenas placeholder
+  model.supports.forEach(s=>{s.reactions={Fx:0,Fy:0,Mz:0};});
+  updateMemoryCard();
+}
 
-model.elements.push({n1:model.nodes[0],n2:model.nodes[1]});
-model.elements.push({n1:model.nodes[1],n2:model.nodes[2]});
+function updateMemoryCard(){
+  const container=document.getElementById("reactionMemory");
+  if(model.supports.length===0){container.innerHTML="Nenhuma reação calculada ainda."; return;}
+  let html="<ul>";
+  model.supports.forEach(s=>{
+    const r=s.reactions||{Fx:0,Fy:0,Mz:0};
+    html+=`<li>Nó ${s.node.id}: Fx=${r.Fx.toFixed(2)} kN, Fy=${r.Fy.toFixed(2)} kN, Mz=${r.Mz.toFixed(2)} kN·m</li>`;
+  });
+  html+="</ul>";
+  container.innerHTML=html;
+}
 
-setSupport(1,true,true,false);
-setSupport(3,true,true,false);
-addLoad(2,50,100,0);
-
-solveStructure();
-draw();
+/* =======================================
+   SIDEBAR DIREITA
+======================================= */
+function updateRightSidebar(){
+  const container=document.getElementById("elementList");
+  if(model.nodes.length+model.elements.length+model.loads.length===0){
+    container.innerHTML="Nenhum elemento ainda."; return;
+  }
+  let html="";
+  model.nodes.forEach(n=>html+=`<div class="element">Nó ${n.id} - (${n.x.toFixed(2)}, ${n.y.toFixed(2)})</div>`);
+  model.elements.forEach((el,i)=>html+=`<div class="element">Viga ${i+1} - Nó ${el.n1.id} a Nó ${el.n2.id}</div>`);
+  model.loads.forEach((l,i)=>html+=`<div class="element">Carga ${i+1} - Nó ${l.node.id} - ${l.value} kN</div>`);
+  container.innerHTML=html;
+}
