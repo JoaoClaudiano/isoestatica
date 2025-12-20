@@ -18,10 +18,6 @@ function multiply(A, B) {
   return C;
 }
 
-function add(A, B) {
-  return A.map((r, i) => r.map((v, j) => v + B[i][j]));
-}
-
 /* =====================================================
    MODELO
 ===================================================== */
@@ -33,29 +29,29 @@ const model = {
 };
 
 /* =====================================================
-   SOLVER MATRICIAL
+   SOLVER MATRICIAL GLOBAL
 ===================================================== */
 function solveStructure() {
+  /* -------------------------
+     1. NUMERAÇÃO DE DOFs
+  ------------------------- */
   const dofMap = new Map();
   let dofCount = 0;
 
-  // Numerar DOFs
   model.nodes.forEach(n => {
     dofMap.set(n.id, [dofCount, dofCount + 1, dofCount + 2]);
     dofCount += 3;
-     const u = gaussianElimination(K, F);
-
-model.elements.forEach(el => {
-  const forces = recoverElementForces(el, u, dofMap);
-  generateDiagramsFromForces(el, forces);
-});
-
   });
 
+  /* -------------------------
+     2. INICIALIZAÇÃO
+  ------------------------- */
   let K = zeros(dofCount, dofCount);
   let F = Array(dofCount).fill(0);
 
-  // Montagem da rigidez global
+  /* -------------------------
+     3. MONTAGEM DA RIGIDEZ
+  ------------------------- */
   model.elements.forEach(el => {
     const n1 = el.n1;
     const n2 = el.n2;
@@ -70,7 +66,7 @@ model.elements.forEach(el => {
     const A = el.A || 0.02;
     const I = el.I || 8e-4;
 
-    const k = [
+    const kLocal = [
       [ A*E/L, 0, 0, -A*E/L, 0, 0 ],
       [ 0, 12*E*I/L**3, 6*E*I/L**2, 0, -12*E*I/L**3, 6*E*I/L**2 ],
       [ 0, 6*E*I/L**2, 4*E*I/L, 0, -6*E*I/L**2, 2*E*I/L ],
@@ -88,31 +84,35 @@ model.elements.forEach(el => {
       [ 0, 0, 0, 0, 0, 1 ]
     ];
 
-    const kG = multiply(transpose(T), multiply(k, T));
+    const kGlobal = multiply(transpose(T), multiply(kLocal, T));
 
     const dofs = [
       ...dofMap.get(n1.id),
       ...dofMap.get(n2.id)
     ];
 
-    dofs.forEach((i, r) => {
-      dofs.forEach((j, c) => {
-        K[i][j] += kG[r][c];
+    dofs.forEach((I, i) => {
+      dofs.forEach((J, j) => {
+        K[I][J] += kGlobal[i][j];
       });
     });
   });
 
-  // Aplicar cargas nodais (por enquanto pontuais)
+  /* -------------------------
+     4. CARGAS NODAIS
+  ------------------------- */
   model.loads.forEach(l => {
     const dofs = dofMap.get(l.node.id);
     F[dofs[1]] -= l.value;
   });
 
-  // Aplicar vínculos
+  /* -------------------------
+     5. VÍNCULOS
+  ------------------------- */
   model.supports.forEach(s => {
     const dofs = dofMap.get(s.node.id);
-    s.fixed.forEach((isFixed, i) => {
-      if (isFixed) {
+    s.fixed.forEach((fix, i) => {
+      if (fix) {
         const d = dofs[i];
         K[d].fill(0);
         K.forEach(r => r[d] = 0);
@@ -122,10 +122,24 @@ model.elements.forEach(el => {
     });
   });
 
-  // Resolver sistema (Gauss simples)
+  /* -------------------------
+     6. RESOLUÇÃO
+  ------------------------- */
   const u = gaussianElimination(K, F);
-  console.log("Deslocamentos:", u);
+  console.log("Deslocamentos globais:", u);
+
+  /* -------------------------
+     7. PÓS-PROCESSAMENTO
+  ------------------------- */
+  model.elements.forEach(el => {
+    const forces = recoverElementForces(el, u, dofMap);
+    generateDiagramsFromForces(el, forces);
+  });
 }
+
+/* =====================================================
+   RECUPERAÇÃO DE ESFORÇOS
+===================================================== */
 function recoverElementForces(el, globalU, dofMap) {
   const n1 = el.n1;
   const n2 = el.n2;
@@ -135,7 +149,6 @@ function recoverElementForces(el, globalU, dofMap) {
     ...dofMap.get(n2.id)
   ];
 
-  // deslocamentos globais do elemento
   const uG = dofs.map(d => globalU[d]);
 
   const dx = n2.x - n1.x;
@@ -153,7 +166,6 @@ function recoverElementForces(el, globalU, dofMap) {
     [ 0, 0, 0, 0, 0, 1 ]
   ];
 
-  // deslocamentos locais
   const uL = multiply(T, uG.map(v => [v]));
 
   const E = el.E || 210e6;
@@ -181,28 +193,35 @@ function recoverElementForces(el, globalU, dofMap) {
     L
   };
 }
-function generateDiagramsFromForces(el, forces) {
+
+/* =====================================================
+   DIAGRAMAS CONTÍNUOS
+===================================================== */
+function generateDiagramsFromForces(el, f) {
   const steps = 40;
   el.diagrams = { N: [], V: [], M: [] };
 
   for (let i = 0; i <= steps; i++) {
-    const s = (i / steps) * forces.L;
+    const s = (i / steps) * f.L;
 
-    const N =
-      forces.N1 + (forces.N2 - forces.N1) * (s / forces.L);
+    el.diagrams.N.push({
+      s,
+      value: f.N1 + (f.N2 - f.N1) * s / f.L
+    });
 
-    const V =
-      forces.V1 + (forces.V2 - forces.V1) * (s / forces.L);
+    el.diagrams.V.push({
+      s,
+      value: f.V1 + (f.V2 - f.V1) * s / f.L
+    });
 
-    const M =
-      forces.M1 * (1 - s / forces.L) +
-      forces.M2 * (s / forces.L) +
-      forces.V1 * s -
-      forces.V2 * s;
-
-    el.diagrams.N.push({ s, value: N });
-    el.diagrams.V.push({ s, value: V });
-    el.diagrams.M.push({ s, value: M });
+    el.diagrams.M.push({
+      s,
+      value:
+        f.M1 * (1 - s / f.L) +
+        f.M2 * (s / f.L) +
+        f.V1 * s -
+        f.V2 * s
+    });
   }
 }
 
@@ -211,6 +230,7 @@ function generateDiagramsFromForces(el, forces) {
 ===================================================== */
 function gaussianElimination(A, b) {
   const n = b.length;
+
   for (let i = 0; i < n; i++) {
     let max = i;
     for (let k = i + 1; k < n; k++)
