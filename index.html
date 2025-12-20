@@ -15,29 +15,30 @@
 
   <!-- PAINEL LATERAL -->
   <aside id="sidebar">
+
     <section>
       <h2>Viga</h2>
       <label>Comprimento (m)</label>
       <input id="beam-length" type="number" value="5" step="0.1">
-      <button id="create-beam">Desenhar viga</button>
+      <button id="create-beam">Criar / Atualizar Viga</button>
     </section>
 
     <section>
       <h2>Apoios</h2>
-      <button data-tool="support-pinned">Pino</button>
-      <button data-tool="support-roller">Rolete</button>
-      <button data-tool="support-fixed">Engaste</button>
+      <p class="hint">Clique na viga para inserir</p>
+      <button data-tool="support-left">Apoio esquerdo</button>
+      <button data-tool="support-right">Apoio direito</button>
     </section>
 
     <section>
       <h2>Cargas</h2>
       <button data-tool="load-point">Carga pontual</button>
-      <button data-tool="load-dist">Carga distribuída</button>
     </section>
 
     <section>
-      <button id="solve">Resolver estrutura</button>
+      <button id="solve">Resolver e gerar diagramas</button>
     </section>
+
   </aside>
 
   <!-- ÁREA PRINCIPAL -->
