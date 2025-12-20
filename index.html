@@ -4,24 +4,106 @@
 <meta charset="UTF-8">
 <title>Estrutura Interativa</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  #controls button { margin-right: 5px; margin-bottom: 10px; }
+  #infoCard, #memoryCard { 
+    background-color: #f9f9f9; 
+    border: 1px solid #ccc; 
+    padding: 15px; 
+    margin-top: 15px; 
+    border-radius: 8px; 
+    max-width: 900px;
+  }
+  canvas { border: 1px solid #999; }
+</style>
 </head>
 <body>
 
+<h2>Estrutura Interativa</h2>
+
+<div id="controls">
+  <button onclick="addNodePrompt()">Adicionar Nó</button>
+  <button onclick="addSupportPrompt()">Adicionar Apoio</button>
+  <button onclick="addLoadPrompt()">Adicionar Carga</button>
+  <button onclick="resetStructure()">Resetar Estrutura</button>
+  <button onclick="toggleEfforts()">Alternar Esforços (M, V, N)</button>
+</div>
+
 <canvas id="canvas" width="900" height="500"></canvas>
 
-<div id="infoCard">
-  <h3>Como calcular reações de apoio e momentos</h3>
-  <p>
-    Em uma estrutura de vigas, cada nó possui graus de liberdade: deslocamentos horizontais (X), verticais (Y) e rotação (Momento).  
-    As <strong>reações de apoio</strong> são determinadas impondo as restrições dos apoios (fixos, deslizantes ou livres).  
-    O método matricial usado aqui monta a <em>matriz de rigidez global</em> (K) da estrutura e resolve o sistema K·u = F, onde u são os deslocamentos e F as cargas aplicadas.  
-  </p>
-  <p>
-    O <strong>momento</strong> em um nó é calculado considerando a rotação do nó e a rigidez à flexão do elemento conectado.  
-    A combinação de forças e momentos nos apoios garante que a estrutura esteja em equilíbrio, respeitando as leis de Newton e a compatibilidade de deformações.
-  </p>
+<div id="memoryCard">
+  <h3>Memória de cálculo das reações</h3>
+  <div id="reactionMemory">
+    Nenhuma reação calculada ainda.
+  </div>
 </div>
 
 <script src="app.js"></script>
+
+<script>
+/* Funções para interação e prompts */
+function addNodePrompt() {
+  const x = parseFloat(prompt("Posição X do nó (em pixels):"));
+  const y = parseFloat(prompt("Posição Y do nó (em pixels):"));
+  const id = model.nodes.length + 1;
+  if (!isNaN(x) && !isNaN(y)) {
+    model.nodes.push({id, x, y});
+    draw();
+  }
+}
+
+function addSupportPrompt() {
+  const id = parseInt(prompt("ID do nó para apoio:"));
+  if (isNaN(id)) return;
+  const fixX = confirm("Fixar deslocamento X?");
+  const fixY = confirm("Fixar deslocamento Y?");
+  const fixM = confirm("Fixar rotação (momento)?");
+  setSupport(id, fixX, fixY, fixM);
+  solveStructure(); draw(); updateMemoryCard();
+}
+
+function addLoadPrompt() {
+  const id = parseInt(prompt("ID do nó para carga:"));
+  if (isNaN(id)) return;
+  const fx = parseFloat(prompt("Força em X (kN):")) || 0;
+  const fy = parseFloat(prompt("Força em Y (kN):")) || 0;
+  addLoad(id, fx, fy);
+  solveStructure(); draw(); updateMemoryCard();
+}
+
+function resetStructure() {
+  model.nodes = [];
+  model.elements = [];
+  model.supports = [];
+  model.loads = [];
+  draw();
+  document.getElementById("reactionMemory").innerHTML = "Nenhuma reação calculada ainda.";
+}
+
+let showEfforts = true;
+function toggleEfforts() {
+  showEfforts = !showEfforts;
+  draw();
+}
+
+/* Atualiza a memória de cálculo das reações no card */
+function updateMemoryCard() {
+  const container = document.getElementById("reactionMemory");
+  if (model.supports.length === 0) {
+    container.innerHTML = "Nenhuma reação calculada ainda.";
+    return;
+  }
+
+  let html = "<ul>";
+  model.supports.forEach(s => {
+    const r = s.reactions || {Fx:0,Fy:0,Mz:0};
+    html += `<li>Nó ${s.node.id}: Fx = ${r.Fx.toFixed(2)} kN, Fy = ${r.Fy.toFixed(2)} kN, Mz = ${r.Mz.toFixed(2)} kN·m</li>`;
+  });
+  html += "</ul>";
+  container.innerHTML = html;
+}
+</script>
+
 </body>
 </html>
