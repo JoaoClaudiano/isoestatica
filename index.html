@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Estrutura Interativa</title>
+<title>Isostática Interativa</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="style.css">
 <style>
@@ -11,7 +11,7 @@
   header h1 { margin:0; font-size:1.5em; }
   #hamburger { font-size:28px; cursor:pointer; }
 
-  /* Sidebar esquerda (menu) */
+  /* Sidebar esquerda */
   #sidebar {
     height:100%; width:0; position:fixed; z-index:2000; top:0; left:0;
     background:#007acc; overflow-x:hidden; transition:0.3s; padding-top:60px; color:white;
@@ -20,167 +20,89 @@
   #sidebar a:hover { background:#005b96; }
   #sidebar .closebtn { position:absolute; top:10px; right:15px; font-size:30px; cursor:pointer; }
 
-  /* Sidebar direita (elementos) */
-  #rightSidebar {
-    position:fixed; top:60px; right:0; width:250px; height:calc(100% - 60px); background:#f9f9f9; border-left:1px solid #ccc; overflow-y:auto; padding:10px; display:none; z-index:1500;
-  }
-  #rightSidebar h3 { margin-top:0; color:#005b96; }
-  #rightSidebar .element { border-bottom:1px solid #ccc; padding:5px; margin-bottom:5px; cursor:pointer; }
-  #rightSidebar .element:hover { background:#e0f0ff; }
+  #main { margin:10px 10px 10px 270px; }
 
-  #main { margin:10px 260px 10px 10px; }
+  /* Canvas */
+  #canvas { background:#eef2f5; display:block; margin:10px 0; border:1px solid #ccc; }
 
-  #controls { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px; }
-  #controls button { flex:1 1 auto; padding:8px; background:#007acc; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold; }
-  #controls button:hover { background:#005b96; }
-
-  #canvasContainer { position:relative; width:100%; margin-bottom:10px; }
-  canvas { width:100%; height:400px; border:1px solid #999; background-image: radial-gradient(#ccc 1px, transparent 1px); background-size:20px 20px; display:block; }
-
+  /* Crosshair */
   #crosshair {
     position:absolute; width:20px; height:20px; pointer-events:none;
-    border:1px solid red; border-radius:50%; transform:translate(-50%, -50%);
+    border-left:1px solid red; border-top:1px solid red;
+    transform:translate(-50%,-50%);
   }
 
-  .diagramSection { background:white; border-radius:8px; padding:10px; margin-bottom:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
-  .diagramSection h3 { margin:0 0 5px 0; color:#005b96; }
-
-  #memoryCard { background:white; border-radius:8px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:20px; }
-  #memoryCard h3 { color:#005b96; margin-top:0; }
-
-  /* Responsivo */
-  @media(max-width:900px){
-    #main { margin:10px 10px 10px 10px; }
-    #rightSidebar { width:100%; height:200px; top:auto; bottom:0; display:none; border-left:none; border-top:1px solid #ccc; }
+  /* Sidebar direita para edição */
+  #rightSidebar {
+    position:fixed; right:0; top:60px; width:250px; height:calc(100% - 60px); background:#d9edf7; overflow:auto; padding:10px; box-shadow:-2px 0 5px rgba(0,0,0,0.2);
   }
+  #rightSidebar h3 { margin-top:0; }
+
+  /* Footer */
+  footer { background:#005b96; color:white; padding:15px; text-align:center; font-size:0.9em; }
+  footer a { color:white; text-decoration:underline; margin:0 5px; }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Estrutura Interativa</h1>
+  <h1>Isostática Interativa</h1>
   <span id="hamburger">&#9776;</span>
 </header>
 
 <!-- Sidebar esquerda -->
 <div id="sidebar">
   <span class="closebtn" onclick="closeSidebar()">&times;</span>
-  <a href="aba/metodologia-vigas.html" target="_blank">Metodologia Vigas</a>
-  <a href="aba/metodologia-trelicas.html" target="_blank">Metodologia Treliças</a>
-  <a href="aba/sobre-nos.html" target="_blank">Sobre Nós</a>
-  <a href="aba/contato.html" target="_blank">Contato</a>
+  <a href="pages/sobre.html" target="_blank">Sobre</a>
+  <a href="pages/contato.html" target="_blank">Contato</a>
+  <a href="pages/ajuda.html" target="_blank">Ajuda</a>
 </div>
 
-<!-- Sidebar direita: lista de elementos -->
-<div id="rightSidebar">
-  <h3>Elementos Criados</h3>
-  <div id="elementList">
-    Nenhum elemento ainda.
-  </div>
-</div>
-
+<!-- Canvas principal -->
 <div id="main">
-
-  <div id="controls">
+  <canvas id="canvas" width="900" height="500"></canvas>
+  <div id="controls" style="margin:10px 0;">
     <button onclick="addNodePrompt()">Adicionar Nó/Apoio</button>
-    <button onclick="startDrawBeam()">Desenhar Viga</button>
+    <button onclick="startDrawBeam()">Adicionar Viga</button>
     <button onclick="addLoadPrompt()">Adicionar Carga Concentrada</button>
     <button onclick="addDistLoadPrompt()">Adicionar Carga Distribuída</button>
     <button onclick="addMomentPrompt()">Adicionar Momento</button>
     <button onclick="addHingePrompt()">Adicionar Rótula</button>
-    <button onclick="resetStructure()">Resetar Estrutura</button>
-    <button onclick="toggleEfforts()">Alternar Esforços (M,V,N)</button>
-    <button onclick="toggleRightSidebar()">Elementos</button>
   </div>
 
-  <div id="canvasContainer">
-    <canvas id="canvas"></canvas>
-    <div id="crosshair"></div>
-  </div>
-
-  <!-- Diagramas -->
-  <div class="diagramSection">
-    <h3>Momento Fletor (M)</h3>
-    <canvas id="momentDiagram" width="900" height="150"></canvas>
-  </div>
-
-  <div class="diagramSection">
-    <h3>Cortante (V)</h3>
-    <canvas id="shearDiagram" width="900" height="150"></canvas>
-  </div>
-
-  <div class="diagramSection">
-    <h3>Normal (N)</h3>
-    <canvas id="axialDiagram" width="900" height="150"></canvas>
-  </div>
-
-  <!-- Memória de cálculo -->
-  <div id="memoryCard">
-    <h3>Memória de cálculo das reações</h3>
-    <div id="reactionMemory">Nenhuma reação calculada ainda.</div>
-  </div>
-
+  <h3>Memória de cálculo das reações</h3>
+  <div id="reactionMemory" style="background:white; padding:10px; border:1px solid #ccc;"></div>
 </div>
 
-<script src="app.js"></script>
+<!-- Sidebar direita -->
+<div id="rightSidebar">
+  <h3>Elementos Criados</h3>
+  <div id="elementList">Nenhum elemento ainda.</div>
+</div>
 
+<!-- Footer -->
+<footer>
+  <p>© 2025 Isostática Interativa - João Claudiano.</p>
+  <p>
+    <a href="pages/politica.html" target="_blank">Política de Privacidade</a> |
+    <a href="pages/termos.html" target="_blank">Termos de Uso</a> |
+    <a href="pages/ajuda.html" target="_blank">Ajuda</a> |
+    <a href="pages/contato.html" target="_blank">Contato</a>
+  </p>
+  <p>Suporte: jooclaudiano@gmail.com | Versão 1.1.0</p>
+  <p>Desenvolvido com ❤️ por João Claudiano</p>
+</footer>
+
+<!-- Crosshair -->
+<div id="crosshair"></div>
+
+<script src="app.js"></script>
 <script>
 /* Sidebar esquerda */
 const sidebar = document.getElementById("sidebar");
 const hamburger = document.getElementById("hamburger");
 hamburger.onclick = () => { sidebar.style.width="250px"; };
 function closeSidebar() { sidebar.style.width="0"; }
-
-/* Sidebar direita */
-const rightSidebar = document.getElementById("rightSidebar");
-function toggleRightSidebar(){
-  rightSidebar.style.display = (rightSidebar.style.display==='none' || rightSidebar.style.display==='')?'block':'none';
-}
-
-/* Mira seguindo mouse */
-const canvasContainer = document.getElementById("canvasContainer");
-const crosshair = document.getElementById("crosshair");
-canvasContainer.addEventListener("mousemove", e => {
-  const rect = canvasContainer.getBoundingClientRect();
-  crosshair.style.left = (e.clientX - rect.left) + "px";
-  crosshair.style.top = (e.clientY - rect.top) + "px";
-});
-
-/* Funções básicas de interação (implementadas em app.js) */
-function addNodePrompt(){ /* inserção nó/apoio com tipo */ }
-function startDrawBeam(){ /* desenho viga: livre ou entre dois apoios */ }
-function addLoadPrompt(){ /* carga concentrada */ }
-function addDistLoadPrompt(){ /* carga distribuída */ }
-function addMomentPrompt(){ /* momento concentrado */ }
-function addHingePrompt(){ /* rótula */ }
-function resetStructure(){ /* limpa todos os elementos */ draw(); updateMemoryCard(); }
-function toggleEfforts(){ showEfforts=!showEfforts; draw(); }
-
-/* Atualização da sidebar direita */
-function updateRightSidebar(){
-  const container=document.getElementById("elementList");
-  if(model.nodes.length+model.elements.length+model.loads.length===0){
-    container.innerHTML="Nenhum elemento ainda."; return;
-  }
-  let html="";
-  model.nodes.forEach(n=>html+=`<div class="element">Nó ${n.id} - (${n.x.toFixed(2)}, ${n.y.toFixed(2)})</div>`);
-  model.elements.forEach((el,i)=>html+=`<div class="element">Viga ${i+1} - Nó ${el.n1.id} a Nó ${el.n2.id}</div>`);
-  model.loads.forEach((l,i)=>html+=`<div class="element">Carga ${i+1} - Nó ${l.node.id} - ${l.value} kN</div>`);
-  container.innerHTML=html;
-}
-
-/* Atualiza memória de cálculo */
-function updateMemoryCard(){
-  const container=document.getElementById("reactionMemory");
-  if(model.supports.length===0){container.innerHTML="Nenhuma reação calculada ainda."; return;}
-  let html="<ul>";
-  model.supports.forEach(s=>{
-    const r=s.reactions||{Fx:0,Fy:0,Mz:0};
-    html+=`<li>Nó ${s.node.id}: Fx=${r.Fx.toFixed(2)} kN, Fy=${r.Fy.toFixed(2)} kN, Mz=${r.Mz.toFixed(2)} kN·m</li>`;
-  });
-  html+="</ul>";
-  container.innerHTML=html;
-}
 </script>
 
 </body>
