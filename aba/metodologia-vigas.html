@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metodologia Estrutural - João Claudiano</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root { --primary-color: #2c3e50; --accent-color: #e67e22; }
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .sidebar { background: var(--primary-color); color: white; min-height: 100vh; padding: 20px; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .formula-card { background: #fff; border-left: 5px solid var(--accent-color); padding: 20px; margin: 15px 0; }
+        .diagram-container { position: relative; height: 250px; width: 100%; margin-top: 20px; }
+        .step-badge { background: var(--accent-color); color: white; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <main class="col-md-12 ms-sm-auto px-md-4 py-4">
+            <h1 class="text-center mb-5">Metodologia de Análise de Vigas</h1>
+
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title text-primary">1. Viga Biapoiada: Carga Concentrada (P)</h2>
+                    <p class="text-muted">É o caso mais simples: uma força aplicada em um ponto específico.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5><span class="step-badge">1</span> Cálculo de Reações</h5>
+                            <div class="formula-card">
+                                $$R_A = R_B = \frac{P}{2} \text{ (se no centro)}$$
+                            </div>
+                            <h5><span class="step-badge">2</span> Esforços Internos</h5>
+                            <ul>
+                                <li><strong>Cortante (V):</strong> Constante em cada trecho. Salta de $+R_A$ para $-R_B$.</li>
+                                <li><strong>Momento (M):</strong> Linear (triangular), máximo sob a carga.</li>
+                                <li><strong>Normal (N):</strong> Zero (não há forças horizontais).</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="chartConcentrada"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title text-success">2. Viga Biapoiada: Carga Distribuída (q)</h2>
+                    <p class="text-muted">Representa o peso próprio da viga ou uma parede de tijolos.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="formula-card">
+                                <strong>Momento Máximo:</strong> $$M_{max} = \frac{q \cdot L^2}{8}$$
+                                <strong>Cortante Máximo:</strong> $$V_{max} = \frac{q \cdot L}{2}$$
+                            </div>
+                            <p><strong>Comportamento:</strong> O cortante varia linearmente e o momento forma uma parábola de 2º grau.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="chartDistribuida"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title text-warning">3. Vigas Inclinadas (Carga Normal)</h2>
+                    <p class="text-muted">Comum em rampas e terças de telhado. Aqui surge o esforço Normal.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p>Devemos decompor a carga vertical $P$ em componentes local (y') e axial (x'):</p>
+                            <div class="formula-card">
+                                $$P_{transversal} = P \cdot \cos(\theta)$$
+                                $$P_{axial} = P \cdot \sin(\theta)$$
+                            </div>
+                            <p><strong>Diagrama Normal (N):</strong> Diferente de zero. Representa a compressão ou tração ao longo do eixo inclinado.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 border rounded bg-light text-center">
+                                <span class="badge bg-danger">Atenção</span><br>
+                                O momento fletor é calculado apenas com a carga perpendicular à viga!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<script>
+// Gráfico 1: Carga Concentrada (Diagrama de Momento)
+const ctx1 = document.getElementById('chartConcentrada').getContext('2d');
+new Chart(ctx1, {
+    type: 'line',
+    data: {
+        labels: [0, 2, 4],
+        datasets: [{
+            label: 'Momento Fletor (kNm)',
+            data: [0, 10, 0],
+            borderColor: 'blue',
+            backgroundColor: 'rgba(0, 0, 255, 0.1)',
+            fill: true,
+            tension: 0
+        }]
+    },
+    options: { plugins: { title: { display: true, text: 'Diagrama de Momento (Triangular)' } } }
+});
+
+// Gráfico 2: Carga Distribuída (Diagrama de Momento)
+const ctx2 = document.getElementById('chartDistribuida').getContext('2d');
+new Chart(ctx2, {
+    type: 'line',
+    data: {
+        labels: [0, 1, 2, 3, 4],
+        datasets: [{
+            label: 'Momento Fletor (kNm)',
+            data: [0, 7.5, 10, 7.5, 0],
+            borderColor: 'green',
+            backgroundColor: 'rgba(0, 255, 0, 0.1)',
+            fill: true,
+            tension: 0.4 // Cria a curva parabólica
+        }]
+    },
+    options: { plugins: { title: { display: true, text: 'Diagrama de Momento (Parabólico)' } } }
+});
+</script>
+
+</body>
+</html>
