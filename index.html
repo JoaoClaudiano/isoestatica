@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Análise Estrutural Interativa</title>
-<link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
@@ -11,35 +11,43 @@
   <h1>Análise Estrutural — Vigas Isostáticas</h1>
 </header>
 
-<div id="app">
+<div id="layout">
 
-  <!-- PAINEL ESQUERDO -->
-<aside id="sidebar">
-  <h2>Apoios</h2>
-  <div id="support-list">
-    <p class="hint">Selecione um apoio no desenho</p>
-  </div>
+  <!-- PAINEL LATERAL -->
+  <aside id="sidebar">
+    <section>
+      <h2>Viga</h2>
+      <label>Comprimento (m)</label>
+      <input id="beam-length" type="number" value="5" step="0.1">
+      <button id="create-beam">Desenhar viga</button>
+    </section>
 
-  <hr>
+    <section>
+      <h2>Apoios</h2>
+      <button data-tool="support-pinned">Pino</button>
+      <button data-tool="support-roller">Rolete</button>
+      <button data-tool="support-fixed">Engaste</button>
+    </section>
 
-  <h2>Cargas</h2>
-  <div id="load-list">
-    <p class="hint">Selecione uma carga no desenho</p>
-  </div>
-</aside>
+    <section>
+      <h2>Cargas</h2>
+      <button data-tool="load-point">Carga pontual</button>
+      <button data-tool="load-dist">Carga distribuída</button>
+    </section>
+
+    <section>
+      <button id="solve">Resolver estrutura</button>
+    </section>
+  </aside>
 
   <!-- ÁREA PRINCIPAL -->
   <main>
-    <div id="toolbar">
-      <button id="tool-draw-beam">Viga</button>
-      <button id="tool-add-support">Apoio</button>
-      <button id="tool-add-load">Carga Pontual</button>
-      <button id="tool-add-dist-load">Carga Distribuída</button>
-      <button id="solve-structure">Resolver</button>
-      <button id="draw-diagrams">Diagramas</button>
-    </div>
+    <canvas id="canvas" width="1000" height="350"></canvas>
 
-    <canvas id="canvas" width="1000" height="600"></canvas>
+    <div id="diagrams">
+      <canvas id="shearCanvas" width="1000" height="180"></canvas>
+      <canvas id="momentCanvas" width="1000" height="180"></canvas>
+    </div>
   </main>
 
 </div>
