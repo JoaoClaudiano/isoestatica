@@ -3,62 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <title>Estrutura Interativa</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="style.css">
 <style>
-  body { font-family: Arial, sans-serif; margin: 0; }
-  header { display: flex; align-items: center; justify-content: space-between; background:#333; color:#fff; padding:10px 20px; }
-  header h2 { margin:0; font-size:1.2em; }
-  #hamburger { font-size:24px; cursor:pointer; }
-  
-  /* Sidebar */
+  body { font-family: Arial, sans-serif; margin:0; background:#f0f4f8; color:#333; }
+  header { display:flex; justify-content:space-between; align-items:center; background:#005b96; color:white; padding:10px 20px; position: sticky; top:0; z-index:100; }
+  header h1 { margin:0; font-size:1.5em; }
+  #hamburger { font-size:28px; cursor:pointer; }
+
   #sidebar {
-    height: 100%;
-    width: 0;
-    position: fixed;
-    z-index: 1000;
-    top: 0;
-    left: 0;
-    background-color: #444;
-    overflow-x: hidden;
-    transition: 0.3s;
-    padding-top: 60px;
-    color: #fff;
+    height:100%; width:0; position:fixed; z-index:2000; top:0; left:0;
+    background:#007acc; overflow-x:hidden; transition:0.3s; padding-top:60px; color:white;
   }
-  #sidebar a {
-    padding: 10px 20px;
-    text-decoration: none;
-    display: block;
-    color: #fff;
-    transition: 0.2s;
-  }
-  #sidebar a:hover { background-color: #555; }
-  #sidebar .closebtn {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    font-size: 24px;
-    cursor: pointer;
+  #sidebar a { padding:15px 20px; display:block; text-decoration:none; color:white; transition:0.2s; font-weight:bold;}
+  #sidebar a:hover { background:#005b96; }
+  #sidebar .closebtn { position:absolute; top:10px; right:15px; font-size:30px; cursor:pointer; }
+
+  #main { display:flex; flex-direction:column; margin:10px; }
+  #controls { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px; }
+  #controls button { flex:1 1 auto; padding:8px; background:#007acc; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold; }
+  #controls button:hover { background:#005b96; }
+
+  #canvasContainer { position:relative; width:100%; margin-bottom:10px; }
+  canvas { width:100%; height:400px; border:1px solid #999; background-image: radial-gradient(#ccc 1px, transparent 1px); background-size:20px 20px; display:block; }
+
+  #crosshair {
+    position:absolute; width:20px; height:20px; pointer-events:none;
+    border:1px solid red; border-radius:50%; transform:translate(-50%, -50%);
   }
 
-  /* Main content */
-  #main { margin: 20px; }
+  .diagramSection { background:white; border-radius:8px; padding:10px; margin-bottom:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+  .diagramSection h3 { margin:0 0 5px 0; color:#005b96; }
 
-  #controls button { margin-right: 5px; margin-bottom: 10px; }
-  #infoCard, #memoryCard { 
-    background-color: #f9f9f9; 
-    border: 1px solid #ccc; 
-    padding: 15px; 
-    margin-top: 15px; 
-    border-radius: 8px; 
-    max-width: 900px;
+  #memoryCard { background:white; border-radius:8px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:20px; }
+  #memoryCard h3 { color:#005b96; margin-top:0; }
+
+  /* Responsivo */
+  @media(max-width:600px){
+    #controls { flex-direction:column; }
+    canvas { height:300px; }
   }
-  canvas { border: 1px solid #999; display: block; margin-top:10px; }
 </style>
 </head>
 <body>
 
 <header>
-  <h2>Estrutura Interativa</h2>
+  <h1>Estrutura Interativa</h1>
   <span id="hamburger">&#9776;</span>
 </header>
 
@@ -71,94 +61,104 @@
 </div>
 
 <div id="main">
+
   <div id="controls">
     <button onclick="addNodePrompt()">Adicionar Nó</button>
+    <button onclick="startDrawBeam()">Desenhar Viga</button>
     <button onclick="addSupportPrompt()">Adicionar Apoio</button>
     <button onclick="addLoadPrompt()">Adicionar Carga</button>
     <button onclick="resetStructure()">Resetar Estrutura</button>
-    <button onclick="toggleEfforts()">Alternar Esforços (M, V, N)</button>
+    <button onclick="toggleEfforts()">Alternar Esforços (M,V,N)</button>
   </div>
 
-  <canvas id="canvas" width="900" height="500"></canvas>
+  <div id="canvasContainer">
+    <canvas id="canvas"></canvas>
+    <div id="crosshair"></div>
+  </div>
 
+  <!-- Diagramas -->
+  <div class="diagramSection">
+    <h3>Momento Fletor (M)</h3>
+    <canvas id="momentDiagram" width="900" height="150"></canvas>
+  </div>
+
+  <div class="diagramSection">
+    <h3>Cortante (V)</h3>
+    <canvas id="shearDiagram" width="900" height="150"></canvas>
+  </div>
+
+  <div class="diagramSection">
+    <h3>Normal (N)</h3>
+    <canvas id="axialDiagram" width="900" height="150"></canvas>
+  </div>
+
+  <!-- Memória de cálculo -->
   <div id="memoryCard">
     <h3>Memória de cálculo das reações</h3>
-    <div id="reactionMemory">
-      Nenhuma reação calculada ainda.
-    </div>
+    <div id="reactionMemory">Nenhuma reação calculada ainda.</div>
   </div>
+
 </div>
 
 <script src="app.js"></script>
-
 <script>
 /* Sidebar */
 const sidebar = document.getElementById("sidebar");
 const hamburger = document.getElementById("hamburger");
+hamburger.onclick = () => { sidebar.style.width="250px"; };
+function closeSidebar() { sidebar.style.width="0"; }
 
-hamburger.onclick = () => { sidebar.style.width = "250px"; };
-function closeSidebar() { sidebar.style.width = "0"; }
+/* Mira seguindo o mouse */
+const canvasContainer = document.getElementById("canvasContainer");
+const crosshair = document.getElementById("crosshair");
+canvasContainer.addEventListener("mousemove", e => {
+  const rect = canvasContainer.getBoundingClientRect();
+  crosshair.style.left = (e.clientX - rect.left) + "px";
+  crosshair.style.top = (e.clientY - rect.top) + "px";
+});
 
-/* Funções de interação */
+/* Funções de interação básicas */
+function startDrawBeam() {
+  alert("Clique nos nós existentes para desenhar a viga (implementação em app.js).");
+}
 function addNodePrompt() {
-  const x = parseFloat(prompt("Posição X do nó (em pixels):"));
-  const y = parseFloat(prompt("Posição Y do nó (em pixels):"));
-  const id = model.nodes.length + 1;
-  if (!isNaN(x) && !isNaN(y)) {
-    model.nodes.push({id, x, y});
-    draw();
-  }
+  const x=parseFloat(prompt("Posição X do nó (px):"));
+  const y=parseFloat(prompt("Posição Y do nó (px):"));
+  const id=model.nodes.length+1;
+  if(!isNaN(x)&&!isNaN(y)){model.nodes.push({id,x,y}); draw();}
 }
-
 function addSupportPrompt() {
-  const id = parseInt(prompt("ID do nó para apoio:"));
-  if (isNaN(id)) return;
-  const fixX = confirm("Fixar deslocamento X?");
-  const fixY = confirm("Fixar deslocamento Y?");
-  const fixM = confirm("Fixar rotação (momento)?");
-  setSupport(id, fixX, fixY, fixM);
-  solveStructure(); draw(); updateMemoryCard();
+  const id=parseInt(prompt("ID do nó para apoio:"));
+  if(isNaN(id)) return;
+  const fixX=confirm("Fixar X?"); const fixY=confirm("Fixar Y?"); const fixM=confirm("Fixar rotação?");
+  setSupport(id,fixX,fixY,fixM); solveStructure(); draw(); updateMemoryCard();
 }
-
 function addLoadPrompt() {
-  const id = parseInt(prompt("ID do nó para carga:"));
-  if (isNaN(id)) return;
-  const fx = parseFloat(prompt("Força em X (kN):")) || 0;
-  const fy = parseFloat(prompt("Força em Y (kN):")) || 0;
-  addLoad(id, fx, fy);
-  solveStructure(); draw(); updateMemoryCard();
+  const id=parseInt(prompt("ID do nó para carga:"));
+  if(isNaN(id)) return;
+  const fx=parseFloat(prompt("Força X (kN):"))||0;
+  const fy=parseFloat(prompt("Força Y (kN):"))||0;
+  addLoad(id,fx,fy); solveStructure(); draw(); updateMemoryCard();
 }
-
 function resetStructure() {
-  model.nodes = [];
-  model.elements = [];
-  model.supports = [];
-  model.loads = [];
+  model.nodes=[]; model.elements=[]; model.supports=[]; model.loads=[];
   draw();
-  document.getElementById("reactionMemory").innerHTML = "Nenhuma reação calculada ainda.";
+  document.getElementById("reactionMemory").innerHTML="Nenhuma reação calculada ainda.";
 }
+let showEfforts=true;
+function toggleEfforts(){showEfforts=!showEfforts; draw();}
 
-let showEfforts = true;
-function toggleEfforts() {
-  showEfforts = !showEfforts;
-  draw();
-}
-
-/* Atualiza a memória de cálculo das reações no card */
-function updateMemoryCard() {
-  const container = document.getElementById("reactionMemory");
-  if (model.supports.length === 0) {
-    container.innerHTML = "Nenhuma reação calculada ainda.";
-    return;
-  }
-
-  let html = "<ul>";
-  model.supports.forEach(s => {
-    const r = s.reactions || {Fx:0,Fy:0,Mz:0};
-    html += `<li>Nó ${s.node.id}: Fx = ${r.Fx.toFixed(2)} kN, Fy = ${r.Fy.toFixed(2)} kN, Mz = ${r.Mz.toFixed(2)} kN·m</li>`;
+/* Atualiza memória de cálculo */
+function updateMemoryCard(){
+  const container=document.getElementById("reactionMemory");
+  if(model.supports.length===0){container.innerHTML="Nenhuma reação calculada ainda."; return;}
+  let html="<ul>";
+  model.supports.forEach(s=>{
+    const r=s.reactions||{Fx:0,Fy:0,Mz:0};
+    html+=`<li>Nó ${s.node.id}: Fx=${r.Fx.toFixed(2)} kN, Fy=${r.Fy.toFixed(2)} kN, Mz=${r.Mz.toFixed(2)} kN·m</li>`;
   });
-  html += "</ul>";
-  container.innerHTML = html;
+  html+="</ul>";
+  container.innerHTML=html;
 }
 </script>
 
