@@ -43,6 +43,13 @@ function solveStructure() {
   model.nodes.forEach(n => {
     dofMap.set(n.id, [dofCount, dofCount + 1, dofCount + 2]);
     dofCount += 3;
+     const u = gaussianElimination(K, F);
+
+model.elements.forEach(el => {
+  const forces = recoverElementForces(el, u, dofMap);
+  generateDiagramsFromForces(el, forces);
+});
+
   });
 
   let K = zeros(dofCount, dofCount);
@@ -118,6 +125,85 @@ function solveStructure() {
   // Resolver sistema (Gauss simples)
   const u = gaussianElimination(K, F);
   console.log("Deslocamentos:", u);
+}
+function recoverElementForces(el, globalU, dofMap) {
+  const n1 = el.n1;
+  const n2 = el.n2;
+
+  const dofs = [
+    ...dofMap.get(n1.id),
+    ...dofMap.get(n2.id)
+  ];
+
+  // deslocamentos globais do elemento
+  const uG = dofs.map(d => globalU[d]);
+
+  const dx = n2.x - n1.x;
+  const dy = n2.y - n1.y;
+  const L = Math.hypot(dx, dy);
+  const c = dx / L;
+  const s = dy / L;
+
+  const T = [
+    [ c, s, 0, 0, 0, 0 ],
+    [ -s, c, 0, 0, 0, 0 ],
+    [ 0, 0, 1, 0, 0, 0 ],
+    [ 0, 0, 0, c, s, 0 ],
+    [ 0, 0, 0, -s, c, 0 ],
+    [ 0, 0, 0, 0, 0, 1 ]
+  ];
+
+  // deslocamentos locais
+  const uL = multiply(T, uG.map(v => [v]));
+
+  const E = el.E || 210e6;
+  const A = el.A || 0.02;
+  const I = el.I || 8e-4;
+
+  const kLocal = [
+    [ A*E/L, 0, 0, -A*E/L, 0, 0 ],
+    [ 0, 12*E*I/L**3, 6*E*I/L**2, 0, -12*E*I/L**3, 6*E*I/L**2 ],
+    [ 0, 6*E*I/L**2, 4*E*I/L, 0, -6*E*I/L**2, 2*E*I/L ],
+    [ -A*E/L, 0, 0, A*E/L, 0, 0 ],
+    [ 0, -12*E*I/L**3, -6*E*I/L**2, 0, 12*E*I/L**3, -6*E*I/L**2 ],
+    [ 0, 6*E*I/L**2, 2*E*I/L, 0, -6*E*I/L**2, 4*E*I/L ]
+  ];
+
+  const fLocal = multiply(kLocal, uL);
+
+  return {
+    N1: fLocal[0][0],
+    V1: fLocal[1][0],
+    M1: fLocal[2][0],
+    N2: fLocal[3][0],
+    V2: fLocal[4][0],
+    M2: fLocal[5][0],
+    L
+  };
+}
+function generateDiagramsFromForces(el, forces) {
+  const steps = 40;
+  el.diagrams = { N: [], V: [], M: [] };
+
+  for (let i = 0; i <= steps; i++) {
+    const s = (i / steps) * forces.L;
+
+    const N =
+      forces.N1 + (forces.N2 - forces.N1) * (s / forces.L);
+
+    const V =
+      forces.V1 + (forces.V2 - forces.V1) * (s / forces.L);
+
+    const M =
+      forces.M1 * (1 - s / forces.L) +
+      forces.M2 * (s / forces.L) +
+      forces.V1 * s -
+      forces.V2 * s;
+
+    el.diagrams.N.push({ s, value: N });
+    el.diagrams.V.push({ s, value: V });
+    el.diagrams.M.push({ s, value: M });
+  }
 }
 
 /* =====================================================
