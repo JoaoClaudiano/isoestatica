@@ -51,11 +51,9 @@ const ctx = canvas.getContext("2d");
 
 canvas.addEventListener("mousedown", e => {
   const pos = { x: e.offsetX, y: e.offsetY };
-  // Seleciona carga
   selectedLoad = model.loads.find(l => Math.abs(l.node.x - pos.x) < 10 && Math.abs(l.node.y - pos.y) < 10);
-  if (selectedLoad) dragType = 'force'; 
+  if (selectedLoad) dragType = 'force';
 });
-
 canvas.addEventListener("mousemove", e => {
   if (selectedLoad && dragType==='force') {
     const dx = e.offsetX - selectedLoad.node.x;
@@ -65,7 +63,6 @@ canvas.addEventListener("mousemove", e => {
     solveStructure(); draw();
   }
 });
-
 canvas.addEventListener("mouseup", e => { selectedLoad = null; dragType=null; });
 
 /* =====================================================
@@ -121,18 +118,38 @@ function solveStructure() {
 }
 
 /* =====================================================
-   VISUALIZAÇÃO
+   FUNÇÃO DE DESENHO COM FUNDO QUADRICULADO
 ===================================================== */
+function drawGrid(ctx, width, height, step=20) {
+  ctx.strokeStyle = "#eee";
+  ctx.lineWidth = 0.5;
+  for(let x=0;x<=width;x+=step){
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,height); ctx.stroke();
+  }
+  for(let y=0;y<=height;y+=step){
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(width,y); ctx.stroke();
+  }
+}
+
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawGrid(ctx, canvas.width, canvas.height, 25);
 
   // Elementos
   ctx.strokeStyle="black";
+  ctx.lineWidth = 2;
   model.elements.forEach(el=>{
     ctx.beginPath();
     ctx.moveTo(el.n1.x,el.n1.y);
     ctx.lineTo(el.n2.x,el.n2.y);
     ctx.stroke();
+
+    // Desenhar gráficos de esforços (simplificado)
+    // Ex: momento fletor acima da barra
+    const mx = (el.n1.x + el.n2.x)/2;
+    const my = (el.n1.y + el.n2.y)/2 - 30; // acima da barra
+    ctx.fillStyle="purple";
+    ctx.fillText("M", mx-5, my);
   });
 
   // Nós
@@ -152,10 +169,10 @@ function draw() {
   // Cargas
   model.loads.forEach(l=>{
     const {x,y}=l.node;
-    ctx.strokeStyle="red";
+    ctx.strokeStyle="red"; ctx.lineWidth=2;
     ctx.beginPath();
     ctx.moveTo(x,y);
-    ctx.lineTo(x+l.valueX*5,y-l.valueY*5);
+    ctx.lineTo(x+l.valueX*5, y-l.valueY*5);
     ctx.stroke();
     ctx.fillStyle="red";
     ctx.fillText(`Fx:${l.valueX.toFixed(1)}, Fy:${l.valueY.toFixed(1)}`, x+5, y-5);
