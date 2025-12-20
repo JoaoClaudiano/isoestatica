@@ -1,37 +1,22 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-let tool = null;
-let tempAction = null;
+let tool = "draw";
+let mouse = { x: 0, y: 0 };
+let temp = null;
 
+/* ==========================
+   MODELO
+========================== */
 const model = {
-  mode: "parametric",
   nodes: [],
   elements: [],
-  supports: [],
-  loads: []
+  loads: [] // { type, elementId, s, value }
 };
 
-/* =========================
-   TOOL SELECTION
-========================= */
-document.querySelectorAll("[data-tool]").forEach(btn => {
-  btn.onclick = () => tool = btn.dataset.tool;
-});
-
-document.getElementById("mode-parametric").onclick = () => {
-  model.mode = "parametric";
-};
-
-document.getElementById("mode-free").onclick = () => {
-  model.mode = "free";
-};
-
-/* =========================
-   MOUSE + CROSSHAIR
-========================= */
-let mouse = { x: 0, y: 0 };
-
+/* ==========================
+   EVENTOS
+========================== */
 canvas.addEventListener("mousemove", e => {
   mouse.x = e.offsetX;
   mouse.y = e.offsetY;
@@ -39,190 +24,204 @@ canvas.addEventListener("mousemove", e => {
 });
 
 canvas.addEventListener("mousedown", e => {
-  if (tool === "draw-element") startElement(e);
-  if (tool === "support") placeSupport(e);
-  if (tool === "load-point") placePointLoad(e);
-  if (tool === "load-dist") startDistributedLoad(e);
-  if (tool === "moment") placeMoment(e);
+  if (tool === "draw") startElement(e);
+  if (tool === "load") addPointLoad(e);
 });
 
 canvas.addEventListener("mouseup", e => {
-  if (tempAction?.type === "element") finishElement(e);
-  if (tempAction?.type === "distLoad") finishDistributedLoad(e);
+  if (temp?.type === "element") finishElement(e);
 });
 
-/* =========================
-   ELEMENT DRAWING
-========================= */
+/* ==========================
+   ELEMENTOS
+========================== */
 function startElement(e) {
   const n = createNode(e.offsetX, e.offsetY);
-  tempAction = { type: "element", startNode: n };
+  temp = { type: "element", n1: n };
 }
 
 function finishElement(e) {
   const n2 = createNode(e.offsetX, e.offsetY);
-  model.elements.push({
-    id: Date.now(),
-    n1: tempAction.startNode.id,
-    n2: n2.id
-  });
+
+  const dx = n2.x - temp.n1.x;
+  const dy = n2.y - temp.n1.y;
+  const Lpx = Math.hypot(dx, dy);
 
   const L = parseFloat(prompt("Comprimento real (m):", "5"));
-  model.elements.at(-1).length = L;
 
-  tempAction = null;
+  model.elements.push({
+    id: Date.now(),
+    n1: temp.n1,
+    n2,
+    length: L,
+    loads: [],
+    diagrams: { N: [], V: [], M: [] }
+  });
+
+  temp = null;
 }
 
-/* =========================
-   LOADS
-========================= */
-function placePointLoad(e) {
+/* ==========================
+   CARGAS
+========================== */
+function addPointLoad(e) {
+  const el = findClosestElement(e.offsetX, e.offsetY);
+  if (!el) return;
+
+  const s = projectOnElement(el, e.offsetX, e.offsetY);
   const value = parseFloat(prompt("Carga (kN):", "10"));
   if (isNaN(value)) return;
 
-  model.loads.push({
-    type: "point",
-    x: e.offsetX,
-    y: e.offsetY,
-    value
+  el.loads.push({ type: "point", s, value });
+}
+
+/* ==========================
+   SOLVER ISOSTÁTICO SIMPLES
+========================== */
+function solveElement(el) {
+  const L = el.length;
+
+  let RA = 0, RB = 0;
+  el.loads.forEach(l => {
+    RB += l.value * l.s / L;
+    RA += l.value;
   });
+  RA -= RB;
+
+  const steps = 40;
+  el.diagrams.V = [];
+  el.diagrams.M = [];
+
+  for (let i = 0; i <= steps; i++) {
+    const s = (i / steps) * L;
+    let V = RA;
+    let M = RA * s;
+
+    el.loads.forEach(l => {
+      if (s >= l.s) {
+        V -= l.value;
+        M -= l.value * (s - l.s);
+      }
+    });
+
+    el.diagrams.V.push({ s, value: V });
+    el.diagrams.M.push({ s, value: M });
+  }
 }
 
-function startDistributedLoad(e) {
-  tempAction = {
-    type: "distLoad",
-    x1: e.offsetX,
-    y: e.offsetY
-  };
-}
-
-function finishDistributedLoad(e) {
-  const value = parseFloat(prompt("Carga distribuída (kN/m):", "5"));
-  if (isNaN(value)) return;
-
-  model.loads.push({
-    type: "distributed",
-    x1: tempAction.x1,
-    x2: e.offsetX,
-    y: e.offsetY,
-    value
-  });
-
-  tempAction = null;
-}
-
-function placeMoment(e) {
-  const value = parseFloat(prompt("Momento (kN.m):", "10"));
-  if (isNaN(value)) return;
-
-  model.loads.push({
-    type: "moment",
-    x: e.offsetX,
-    y: e.offsetY,
-    value
-  });
-}
-
-/* =========================
-   SUPPORTS
-========================= */
-function placeSupport(e) {
-  model.supports.push({
-    x: e.offsetX,
-    y: e.offsetY,
-    type: "pinned"
-  });
-}
-
-/* =========================
-   DRAWING
-========================= */
+/* ==========================
+   DESENHO
+========================== */
 function redraw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawElements();
-  drawSupports();
-  drawLoads();
-  drawCrosshair();
-  drawTempAction();
-}
 
-function drawElements() {
-  ctx.lineWidth = 3;
   model.elements.forEach(el => {
-    const n1 = model.nodes.find(n => n.id === el.n1);
-    const n2 = model.nodes.find(n => n.id === el.n2);
-    ctx.beginPath();
-    ctx.moveTo(n1.x, n1.y);
-    ctx.lineTo(n2.x, n2.y);
-    ctx.stroke();
+    solveElement(el);
+    drawElement(el);
+    drawDiagrams(el);
   });
+
+  drawTemp();
 }
 
-function drawSupports() {
-  model.supports.forEach(s => {
-    ctx.fillRect(s.x - 4, s.y - 20, 8, 40);
-  });
-}
-
-function drawLoads() {
-  model.loads.forEach(l => {
-    if (l.type === "point") {
-      ctx.beginPath();
-      ctx.moveTo(l.x, l.y - 30);
-      ctx.lineTo(l.x, l.y);
-      ctx.stroke();
-    }
-
-    if (l.type === "distributed") {
-      ctx.beginPath();
-      ctx.moveTo(l.x1, l.y);
-      ctx.lineTo(l.x2, l.y);
-      ctx.stroke();
-    }
-
-    if (l.type === "moment") {
-      ctx.beginPath();
-      ctx.arc(l.x, l.y, 15, 0, Math.PI * 1.5);
-      ctx.stroke();
-    }
-  });
-}
-
-function drawCrosshair() {
-  ctx.setLineDash([5, 5]);
+function drawElement(el) {
+  ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(mouse.x, 0);
-  ctx.lineTo(mouse.x, canvas.height);
-  ctx.moveTo(0, mouse.y);
-  ctx.lineTo(canvas.width, mouse.y);
+  ctx.moveTo(el.n1.x, el.n1.y);
+  ctx.lineTo(el.n2.x, el.n2.y);
   ctx.stroke();
-  ctx.setLineDash([]);
 }
 
-function drawTempAction() {
-  if (!tempAction) return;
+function drawDiagrams(el) {
+  const dx = el.n2.x - el.n1.x;
+  const dy = el.n2.y - el.n1.y;
+  const Lpx = Math.hypot(dx, dy);
 
-  if (tempAction.type === "element") {
-    const n = model.nodes.find(n => n.id === tempAction.startNode.id);
+  const tx = dx / Lpx;
+  const ty = dy / Lpx;
+  const nx = -ty;
+  const ny = tx;
+
+  drawDiagram(el.diagrams.V, el, nx, ny, 10);
+  drawDiagram(el.diagrams.M, el, nx, ny, 4);
+}
+
+function drawDiagram(data, el, nx, ny, scale) {
+  ctx.beginPath();
+
+  data.forEach((p, i) => {
+    const ratio = p.s / el.length;
+    const x = el.n1.x + ratio * (el.n2.x - el.n1.x);
+    const y = el.n1.y + ratio * (el.n2.y - el.n1.y);
+
+    const xd = x + p.value * scale * nx;
+    const yd = y + p.value * scale * ny;
+
+    if (i === 0) ctx.moveTo(xd, yd);
+    else ctx.lineTo(xd, yd);
+  });
+
+  ctx.stroke();
+}
+
+function drawTemp() {
+  if (temp?.type === "element") {
     ctx.beginPath();
-    ctx.moveTo(n.x, n.y);
+    ctx.moveTo(temp.n1.x, temp.n1.y);
     ctx.lineTo(mouse.x, mouse.y);
     ctx.stroke();
   }
-
-  if (tempAction.type === "distLoad") {
-    ctx.beginPath();
-    ctx.moveTo(tempAction.x1, tempAction.y);
-    ctx.lineTo(mouse.x, tempAction.y);
-    ctx.stroke();
-  }
 }
 
-/* =========================
+/* ==========================
    UTIL
-========================= */
+========================== */
 function createNode(x, y) {
   const node = { id: Date.now() + Math.random(), x, y };
   model.nodes.push(node);
   return node;
+}
+
+function findClosestElement(x, y) {
+  let best = null;
+  let min = 15;
+
+  model.elements.forEach(el => {
+    const d = distToSegment(el.n1, el.n2, x, y);
+    if (d < min) {
+      min = d;
+      best = el;
+    }
+  });
+
+  return best;
+}
+
+function projectOnElement(el, x, y) {
+  const dx = el.n2.x - el.n1.x;
+  const dy = el.n2.y - el.n1.y;
+  const Lpx = Math.hypot(dx, dy);
+
+  const t =
+    ((x - el.n1.x) * dx + (y - el.n1.y) * dy) / (Lpx * Lpx);
+
+  return Math.max(0, Math.min(1, t)) * el.length;
+}
+
+function distToSegment(n1, n2, x, y) {
+  const A = x - n1.x;
+  const B = y - n1.y;
+  const C = n2.x - n1.x;
+  const D = n2.y - n1.y;
+
+  const dot = A * C + B * D;
+  const lenSq = C * C + D * D;
+  let t = dot / lenSq;
+
+  t = Math.max(0, Math.min(1, t));
+
+  const px = n1.x + t * C;
+  const py = n1.y + t * D;
+
+  return Math.hypot(x - px, y - py);
 }
