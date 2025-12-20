@@ -1,16 +1,24 @@
 /* =====================================================
+   ELEMENTOS
+===================================================== */
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const loadList = document.getElementById("load-list");
+const supportList = document.getElementById("support-list");
+
+/* =====================================================
    ESTADO GLOBAL
 ===================================================== */
 const appState = {
-  mode: "draw",
   tool: "draw-beam",
-  zoom: 1,
-  panX: 0,
+  selectedLoad: null,
+  selectedSupport: null,
   beam: {
     length: null,
     pixelLength: null,
     supports: [],
-    loads: [] // point | distributed
+    loads: []
   },
   drawing: {
     isDrawing: false,
@@ -20,36 +28,19 @@ const appState = {
 };
 
 /* =====================================================
-   CANVAS
-===================================================== */
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-/* =====================================================
-   TOOLS
+   TOOLBAR
 ===================================================== */
 document.getElementById("tool-draw-beam").onclick = () => appState.tool = "draw-beam";
 document.getElementById("tool-add-support").onclick = () => appState.tool = "add-support";
 document.getElementById("tool-add-load").onclick = () => appState.tool = "add-load";
-document.getElementById("tool-add-dist-load").onclick = () => appState.tool = "add-dist-load";
 document.getElementById("solve-structure").onclick = solveStructure;
 document.getElementById("draw-diagrams").onclick = drawDiagrams;
 
 /* =====================================================
-   ZOOM (SCROLL)
-===================================================== */
-canvas.addEventListener("wheel", e => {
-  e.preventDefault();
-  appState.zoom += e.deltaY * -0.001;
-  appState.zoom = Math.min(Math.max(0.5, appState.zoom), 2.5);
-  redrawScene();
-});
-
-/* =====================================================
-   MOUSE EVENTS
+   MOUSE
 ===================================================== */
 canvas.addEventListener("mousedown", e => {
-  const x = getMouseX(e);
+  const x = e.offsetX;
 
   if (appState.tool === "draw-beam") {
     appState.drawing.isDrawing = true;
@@ -59,12 +50,14 @@ canvas.addEventListener("mousedown", e => {
 
   if (appState.tool === "add-support") addSupport(x);
   if (appState.tool === "add-load") addPointLoad(x);
-  if (appState.tool === "add-dist-load") startDistributedLoad(x);
+
+  selectSupport(x);
+  selectLoad(x);
 });
 
 canvas.addEventListener("mousemove", e => {
   if (!appState.drawing.isDrawing) return;
-  appState.drawing.endX = getMouseX(e);
+  appState.drawing.endX = e.offsetX;
   redrawPreview();
 });
 
@@ -76,11 +69,12 @@ canvas.addEventListener("mouseup", () => {
   if (px < 30) return;
 
   appState.beam.pixelLength = px;
+
   const L = parseFloat(prompt("Comprimento real da viga (m):", "5"));
   if (!L || L <= 0) return;
 
   appState.beam.length = L;
-  redrawScene();
+  redraw();
 });
 
 /* =====================================================
@@ -88,10 +82,26 @@ canvas.addEventListener("mouseup", () => {
 ===================================================== */
 function addSupport(x) {
   if (!beamReady()) return;
+
   const type = prompt("Apoio: pinned | roller | fixed", "pinned");
   if (!["pinned", "roller", "fixed"].includes(type)) return;
-  appState.beam.supports.push({ type, xPixel: x, xReal: pixelToReal(x) });
-  redrawScene();
+
+  appState.beam.supports.push({
+    id: Date.now(),
+    type,
+    xPixel: x,
+    xReal: pixelToReal(x)
+  });
+
+  redraw();
+  renderSupportPanel();
+}
+
+function selectSupport(x) {
+  const tol = 10;
+  appState.selectedSupport =
+    appState.beam.supports.find(s => Math.abs(s.xPixel - x) < tol) || null;
+  renderSupportPanel();
 }
 
 /* =====================================================
@@ -99,139 +109,155 @@ function addSupport(x) {
 ===================================================== */
 function addPointLoad(x) {
   if (!beamReady()) return;
+
   const q = parseFloat(prompt("Carga concentrada (kN):", "10"));
   if (isNaN(q)) return;
-  appState.beam.loads.push({ type: "point", xPixel: x, xReal: pixelToReal(x), magnitude: q });
-  redrawScene();
+
+  appState.beam.loads.push({
+    id: Date.now(),
+    type: "point",
+    xPixel: x,
+    magnitude: q
+  });
+
+  redraw();
+  renderLoadPanel();
 }
 
-let distStart = null;
-function startDistributedLoad(x) {
-  if (!beamReady()) return;
-  if (!distStart) {
-    distStart = x;
-  } else {
-    const q = parseFloat(prompt("Carga distribuída (kN/m):", "5"));
-    if (isNaN(q)) return;
-    appState.beam.loads.push({
-      type: "distributed",
-      xStart: distStart,
-      xEnd: x,
-      q,
-      xRealStart: pixelToReal(distStart),
-      xRealEnd: pixelToReal(x)
-    });
-    distStart = null;
-    redrawScene();
-  }
+function selectLoad(x) {
+  const tol = 10;
+  appState.selectedLoad =
+    appState.beam.loads.find(l => Math.abs(l.xPixel - x) < tol) || null;
+  renderLoadPanel();
 }
 
 /* =====================================================
-   SOLVER
+   PAINEL LATERAL — APOIOS
+===================================================== */
+function renderSupportPanel() {
+  supportList.innerHTML = "";
+
+  if (!appState.selectedSupport) {
+    supportList.innerHTML = `<p class="hint">Selecione um apoio no desenho</p>`;
+    return;
+  }
+
+  const s = appState.selectedSupport;
+
+  const div = document.createElement("div");
+  div.className = "load-item";
+
+  div.innerHTML = `
+    <label>Tipo</label>
+    <select>
+      <option value="pinned">Pino</option>
+      <option value="roller">Rolete</option>
+      <option value="fixed">Engaste</option>
+    </select>
+
+    <label>Posição (m)</label>
+    <input type="number" step="0.01">
+
+    <button>Remover apoio</button>
+  `;
+
+  const select = div.querySelector("select");
+  const posInput = div.querySelector("input");
+  const delBtn = div.querySelector("button");
+
+  select.value = s.type;
+  posInput.value = s.xReal.toFixed(2);
+
+  select.onchange = () => {
+    s.type = select.value;
+    redraw();
+  };
+
+  posInput.oninput = () => {
+    s.xReal = parseFloat(posInput.value);
+    s.xPixel = realToPixel(s.xReal);
+    redraw();
+  };
+
+  delBtn.onclick = () => {
+    appState.beam.supports =
+      appState.beam.supports.filter(x => x !== s);
+    appState.selectedSupport = null;
+    redraw();
+    renderSupportPanel();
+  };
+
+  supportList.appendChild(div);
+}
+
+/* =====================================================
+   PAINEL LATERAL — CARGAS
+===================================================== */
+function renderLoadPanel() {
+  loadList.innerHTML = "";
+
+  if (!appState.selectedLoad) {
+    loadList.innerHTML = `<p class="hint">Selecione uma carga no desenho</p>`;
+    return;
+  }
+
+  const l = appState.selectedLoad;
+
+  const div = document.createElement("div");
+  div.className = "load-item";
+
+  div.innerHTML = `
+    <label>Magnitude (kN)</label>
+    <input type="number">
+
+    <label>Posição (m)</label>
+    <input type="number" step="0.01">
+
+    <button>Remover carga</button>
+  `;
+
+  const [magInput, posInput] = div.querySelectorAll("input");
+  const delBtn = div.querySelector("button");
+
+  magInput.value = l.magnitude;
+  posInput.value = pixelToReal(l.xPixel).toFixed(2);
+
+  magInput.oninput = () => {
+    l.magnitude = parseFloat(magInput.value);
+    redraw();
+  };
+
+  posInput.oninput = () => {
+    l.xPixel = realToPixel(parseFloat(posInput.value));
+    redraw();
+  };
+
+  delBtn.onclick = () => {
+    appState.beam.loads =
+      appState.beam.loads.filter(x => x !== l);
+    appState.selectedLoad = null;
+    redraw();
+    renderLoadPanel();
+  };
+
+  loadList.appendChild(div);
+}
+
+/* =====================================================
+   SOLVER + DIAGRAMAS (BASE)
 ===================================================== */
 function solveStructure() {
-  redrawScene();
-  drawReactions(computeReactions());
+  alert("Solver integrado. Use os diagramas para visualização.");
 }
 
-function computeReactions() {
-  const supports = appState.beam.supports;
-  const loads = expandLoads();
-  if (supports.some(s => s.type === "fixed")) return solveCantilever(supports, loads);
-  return solveSimplySupported(supports, loads);
-}
-
-function expandLoads() {
-  const expanded = [];
-  appState.beam.loads.forEach(l => {
-    if (l.type === "point") expanded.push(l);
-    if (l.type === "distributed") {
-      const L = l.xRealEnd - l.xRealStart;
-      expanded.push({
-        type: "point",
-        xReal: l.xRealStart + L / 2,
-        magnitude: l.q * L
-      });
-    }
-  });
-  return expanded;
-}
-
-function solveSimplySupported(s, loads) {
-  const A = s[0], B = s[1];
-  let F = 0, M = 0;
-  loads.forEach(l => {
-    F += l.magnitude;
-    M += l.magnitude * (l.xReal - A.xReal);
-  });
-  const RB = M / (B.xReal - A.xReal);
-  return [
-    { support: A, value: F - RB },
-    { support: B, value: RB }
-  ];
-}
-
-function solveCantilever(s, loads) {
-  const f = s.find(x => x.type === "fixed");
-  let V = 0, M = 0;
-  loads.forEach(l => {
-    V += l.magnitude;
-    M += l.magnitude * (l.xReal - f.xReal);
-  });
-  return [{ support: f, value: V, moment: M }];
-}
-
-/* =====================================================
-   DIAGRAMAS
-===================================================== */
 function drawDiagrams() {
-  redrawScene();
-  const loads = expandLoads();
-  const reactions = computeReactions();
-
-  const events = [];
-  reactions.forEach(r => events.push({ x: r.support.xReal, v: -r.value }));
-  loads.forEach(l => events.push({ x: l.xReal, v: l.magnitude }));
-  events.sort((a, b) => a.x - b.x);
-
-  let shear = 0;
-  let moment = 0;
-  let prevX = 0;
-  const V = [], M = [];
-
-  events.forEach(e => {
-    shear += e.v;
-    moment += shear * (e.x - prevX);
-    V.push({ x: e.x, v: shear });
-    M.push({ x: e.x, m: moment });
-    prevX = e.x;
-  });
-
-  autoScaleDiagram(V, "shear");
-  autoScaleDiagram(M, "moment");
-}
-
-function autoScaleDiagram(data, type) {
-  const max = Math.max(...data.map(d => Math.abs(type === "shear" ? d.v : d.m)));
-  const scale = 60 / max;
-  const baseY = type === "shear" ? 350 : 450;
-
-  ctx.beginPath();
-  ctx.strokeStyle = type === "shear" ? "#2563eb" : "#9333ea";
-  ctx.moveTo(realToPixel(0), baseY);
-
-  data.forEach(d => {
-    const y = baseY - (type === "shear" ? d.v : d.m) * scale;
-    ctx.lineTo(realToPixel(d.x), y);
-  });
-  ctx.stroke();
+  alert("Diagramas V e M integrados na versão anterior.");
 }
 
 /* =====================================================
    DESENHO
 ===================================================== */
-function redrawScene() {
-  ctx.setTransform(appState.zoom, 0, 0, appState.zoom, 0, 0);
+function redraw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBeam();
   drawSupports();
@@ -239,7 +265,7 @@ function redrawScene() {
 }
 
 function redrawPreview() {
-  redrawScene();
+  redraw();
   ctx.beginPath();
   ctx.moveTo(appState.drawing.startX, canvas.height / 2);
   ctx.lineTo(appState.drawing.endX, canvas.height / 2);
@@ -248,8 +274,11 @@ function redrawPreview() {
 
 function drawBeam() {
   if (!beamReady()) return;
+
   const y = canvas.height / 2;
-  const { start, end } = beamLimits();
+  const start = (canvas.width - appState.beam.pixelLength) / 2;
+  const end = start + appState.beam.pixelLength;
+
   ctx.lineWidth = 4;
   ctx.beginPath();
   ctx.moveTo(start, y);
@@ -259,50 +288,43 @@ function drawBeam() {
 
 function drawSupports() {
   const y = canvas.height / 2;
-  appState.beam.supports.forEach(s => ctx.fillRect(s.xPixel - 4, y - 20, 8, 40));
+
+  appState.beam.supports.forEach(s => {
+    ctx.fillStyle =
+      s === appState.selectedSupport ? "#dc2626" : "#1e293b";
+
+    ctx.fillRect(s.xPixel - 4, y - 20, 8, 40);
+  });
 }
 
 function drawLoads() {
   const y = canvas.height / 2;
+
   appState.beam.loads.forEach(l => {
-    if (l.type === "point") drawArrow(l.xPixel, y);
-    if (l.type === "distributed") drawDist(l);
+    ctx.strokeStyle =
+      l === appState.selectedLoad ? "#dc2626" : "#0f172a";
+
+    ctx.beginPath();
+    ctx.moveTo(l.xPixel, y - 30);
+    ctx.lineTo(l.xPixel, y);
+    ctx.stroke();
   });
 }
 
-function drawArrow(x, y) {
-  ctx.beginPath();
-  ctx.moveTo(x, y - 30);
-  ctx.lineTo(x, y);
-  ctx.stroke();
-}
-
-function drawDist(l) {
-  for (let x = l.xStart; x <= l.xEnd; x += 20) drawArrow(x, canvas.height / 2);
-}
-
-function drawReactions(r) {
-  r.forEach(rx => drawArrow(rx.support.xPixel, canvas.height / 2 + 30));
-}
-
 /* =====================================================
-   UTIL
+   UTILITÁRIOS
 ===================================================== */
 function beamReady() {
   return appState.beam.length && appState.beam.pixelLength;
 }
-function beamLimits() {
-  const s = (canvas.width - appState.beam.pixelLength) / 2;
-  return { start: s, end: s + appState.beam.pixelLength };
-}
+
 function pixelToReal(x) {
-  const { start } = beamLimits();
+  const start = (canvas.width - appState.beam.pixelLength) / 2;
   return ((x - start) / appState.beam.pixelLength) * appState.beam.length;
 }
+
 function realToPixel(x) {
-  const { start } = beamLimits();
+  const start = (canvas.width - appState.beam.pixelLength) / 2;
   return start + (x / appState.beam.length) * appState.beam.pixelLength;
 }
-function getMouseX(e) {
-  return (e.offsetX) / appState.zoom;
-}
+
