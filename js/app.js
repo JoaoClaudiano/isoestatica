@@ -1,321 +1,150 @@
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+/* =====================================================
+   UTIL MATRICIAL
+===================================================== */
+function zeros(n, m) {
+  return Array.from({ length: n }, () => Array(m).fill(0));
+}
 
-let tool = "draw";
-let mouse = { x: 0, y: 0 };
-let temp = null;
+function transpose(A) {
+  return A[0].map((_, i) => A.map(r => r[i]));
+}
 
-/* ==========================
-   MODELO GLOBAL
-========================== */
+function multiply(A, B) {
+  const C = zeros(A.length, B[0].length);
+  for (let i = 0; i < A.length; i++)
+    for (let j = 0; j < B[0].length; j++)
+      for (let k = 0; k < B.length; k++)
+        C[i][j] += A[i][k] * B[k][j];
+  return C;
+}
+
+function add(A, B) {
+  return A.map((r, i) => r.map((v, j) => v + B[i][j]));
+}
+
+/* =====================================================
+   MODELO
+===================================================== */
 const model = {
   nodes: [],
-  elements: []
+  elements: [],
+  supports: [],
+  loads: []
 };
 
-/* ==========================
-   EVENTOS DE MOUSE
-========================== */
-canvas.addEventListener("mousemove", e => {
-  mouse.x = e.offsetX;
-  mouse.y = e.offsetY;
-  redraw();
-});
+/* =====================================================
+   SOLVER MATRICIAL
+===================================================== */
+function solveStructure() {
+  const dofMap = new Map();
+  let dofCount = 0;
 
-canvas.addEventListener("mousedown", e => {
-  if (tool === "draw") startElement(e);
-  if (tool === "load-point") placePointLoad(e);
-  if (tool === "load-dist") startDistLoad(e);
-  if (tool === "moment") placeMoment(e);
-});
-
-canvas.addEventListener("mouseup", e => {
-  if (temp?.type === "element") finishElement(e);
-  if (temp?.type === "distLoad") finishDistLoad(e);
-});
-
-/* ==========================
-   ELEMENTOS
-========================== */
-function startElement(e) {
-  const n1 = createNode(e.offsetX, e.offsetY);
-  temp = { type: "element", n1 };
-}
-
-function finishElement(e) {
-  const n2 = createNode(e.offsetX, e.offsetY);
-  const L = parseFloat(prompt("Comprimento real do elemento (m):", "5"));
-  if (isNaN(L)) return;
-
-  model.elements.push({
-    id: Date.now(),
-    n1,
-    n2,
-    length: L,
-    loads: [],
-    diagrams: { N: [], V: [], M: [] }
+  // Numerar DOFs
+  model.nodes.forEach(n => {
+    dofMap.set(n.id, [dofCount, dofCount + 1, dofCount + 2]);
+    dofCount += 3;
   });
 
-  temp = null;
-}
+  let K = zeros(dofCount, dofCount);
+  let F = Array(dofCount).fill(0);
 
-/* ==========================
-   CARGAS
-========================== */
-function placePointLoad(e) {
-  const el = findClosestElement(e.offsetX, e.offsetY);
-  if (!el) return;
+  // Montagem da rigidez global
+  model.elements.forEach(el => {
+    const n1 = el.n1;
+    const n2 = el.n2;
 
-  const s = project(el, e.offsetX, e.offsetY);
-  const q = parseFloat(prompt("Carga pontual (kN):", "10"));
-  if (isNaN(q)) return;
+    const dx = n2.x - n1.x;
+    const dy = n2.y - n1.y;
+    const L = Math.hypot(dx, dy);
+    const c = dx / L;
+    const s = dy / L;
 
-  el.loads.push({ type: "point", s, value: q });
-}
+    const E = el.E || 210e6;
+    const A = el.A || 0.02;
+    const I = el.I || 8e-4;
 
-function startDistLoad(e) {
-  const el = findClosestElement(e.offsetX, e.offsetY);
-  if (!el) return;
+    const k = [
+      [ A*E/L, 0, 0, -A*E/L, 0, 0 ],
+      [ 0, 12*E*I/L**3, 6*E*I/L**2, 0, -12*E*I/L**3, 6*E*I/L**2 ],
+      [ 0, 6*E*I/L**2, 4*E*I/L, 0, -6*E*I/L**2, 2*E*I/L ],
+      [ -A*E/L, 0, 0, A*E/L, 0, 0 ],
+      [ 0, -12*E*I/L**3, -6*E*I/L**2, 0, 12*E*I/L**3, -6*E*I/L**2 ],
+      [ 0, 6*E*I/L**2, 2*E*I/L, 0, -6*E*I/L**2, 4*E*I/L ]
+    ];
 
-  const s0 = project(el, e.offsetX, e.offsetY);
-  temp = { type: "distLoad", el, s0 };
-}
+    const T = [
+      [ c, s, 0, 0, 0, 0 ],
+      [ -s, c, 0, 0, 0, 0 ],
+      [ 0, 0, 1, 0, 0, 0 ],
+      [ 0, 0, 0, c, s, 0 ],
+      [ 0, 0, 0, -s, c, 0 ],
+      [ 0, 0, 0, 0, 0, 1 ]
+    ];
 
-function finishDistLoad(e) {
-  const s1 = project(temp.el, e.offsetX, e.offsetY);
-  const q = parseFloat(prompt("Carga distribuída (kN/m):", "5"));
-  if (isNaN(q)) return;
+    const kG = multiply(transpose(T), multiply(k, T));
 
-  temp.el.loads.push({
-    type: "distributed",
-    s0: Math.min(temp.s0, s1),
-    s1: Math.max(temp.s0, s1),
-    value: q
+    const dofs = [
+      ...dofMap.get(n1.id),
+      ...dofMap.get(n2.id)
+    ];
+
+    dofs.forEach((i, r) => {
+      dofs.forEach((j, c) => {
+        K[i][j] += kG[r][c];
+      });
+    });
   });
 
-  temp = null;
-}
-
-function placeMoment(e) {
-  const el = findClosestElement(e.offsetX, e.offsetY);
-  if (!el) return;
-
-  const s = project(el, e.offsetX, e.offsetY);
-  const m = parseFloat(prompt("Momento concentrado (kN·m):", "10"));
-  if (isNaN(m)) return;
-
-  el.loads.push({ type: "moment", s, value: m });
-}
-
-/* ==========================
-   SOLVER POR ELEMENTO
-========================== */
-function solveElement(el) {
-  const L = el.length;
-  const steps = 40;
-
-  el.diagrams = { N: [], V: [], M: [] };
-
-  let RA = 0;
-  let RB = 0;
-
-  el.loads.forEach(l => {
-    if (l.type === "point") {
-      RB += l.value * l.s / L;
-      RA += l.value;
-    }
-    if (l.type === "distributed") {
-      const w = l.value * (l.s1 - l.s0);
-      const xc = (l.s0 + l.s1) / 2;
-      RB += w * xc / L;
-      RA += w;
-    }
+  // Aplicar cargas nodais (por enquanto pontuais)
+  model.loads.forEach(l => {
+    const dofs = dofMap.get(l.node.id);
+    F[dofs[1]] -= l.value;
   });
 
-  RA -= RB;
-
-  for (let i = 0; i <= steps; i++) {
-    const s = (i / steps) * L;
-    let V = RA;
-    let M = RA * s;
-    let N = 0;
-
-    el.loads.forEach(l => {
-      if (l.type === "point" && s >= l.s) {
-        V -= l.value;
-        M -= l.value * (s - l.s);
-      }
-      if (l.type === "distributed" && s >= l.s0) {
-        const dx = Math.min(s, l.s1) - l.s0;
-        if (dx > 0) {
-          V -= l.value * dx;
-          M -= l.value * dx * (s - (l.s0 + dx / 2));
-        }
-      }
-      if (l.type === "moment" && s >= l.s) {
-        M -= l.value;
+  // Aplicar vínculos
+  model.supports.forEach(s => {
+    const dofs = dofMap.get(s.node.id);
+    s.fixed.forEach((isFixed, i) => {
+      if (isFixed) {
+        const d = dofs[i];
+        K[d].fill(0);
+        K.forEach(r => r[d] = 0);
+        K[d][d] = 1;
+        F[d] = 0;
       }
     });
-
-    el.diagrams.N.push({ s, value: N });
-    el.diagrams.V.push({ s, value: V });
-    el.diagrams.M.push({ s, value: M });
-  }
-}
-
-/* ==========================
-   DESENHO
-========================== */
-function redraw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  model.elements.forEach(el => {
-    solveElement(el);
-    drawElement(el);
-    drawLoads(el);
-    drawDiagrams(el);
   });
 
-  drawTemp();
-  drawCrosshair();
+  // Resolver sistema (Gauss simples)
+  const u = gaussianElimination(K, F);
+  console.log("Deslocamentos:", u);
 }
 
-function drawElement(el) {
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(el.n1.x, el.n1.y);
-  ctx.lineTo(el.n2.x, el.n2.y);
-  ctx.stroke();
-}
+/* =====================================================
+   GAUSS
+===================================================== */
+function gaussianElimination(A, b) {
+  const n = b.length;
+  for (let i = 0; i < n; i++) {
+    let max = i;
+    for (let k = i + 1; k < n; k++)
+      if (Math.abs(A[k][i]) > Math.abs(A[max][i])) max = k;
 
-function drawLoads(el) {
-  el.loads.forEach(l => {
-    const p = pointOn(el, l.s);
-    if (l.type === "point") {
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y - 20);
-      ctx.lineTo(p.x, p.y);
-      ctx.stroke();
+    [A[i], A[max]] = [A[max], A[i]];
+    [b[i], b[max]] = [b[max], b[i]];
+
+    for (let k = i + 1; k < n; k++) {
+      const f = A[k][i] / A[i][i];
+      for (let j = i; j < n; j++) A[k][j] -= f * A[i][j];
+      b[k] -= f * b[i];
     }
-    if (l.type === "moment") {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 12, 0, Math.PI * 1.5);
-      ctx.stroke();
-    }
-  });
-}
-
-function drawDiagrams(el) {
-  const dx = el.n2.x - el.n1.x;
-  const dy = el.n2.y - el.n1.y;
-  const Lpx = Math.hypot(dx, dy);
-
-  const tx = dx / Lpx;
-  const ty = dy / Lpx;
-  const nx = -ty;
-  const ny = tx;
-
-  plotDiagram(el.diagrams.N, el, nx, ny, -6);
-  plotDiagram(el.diagrams.V, el, nx, ny, 6);
-  plotDiagram(el.diagrams.M, el, nx, ny, 2);
-}
-
-function plotDiagram(data, el, nx, ny, scale) {
-  ctx.beginPath();
-  data.forEach((p, i) => {
-    const base = pointOn(el, p.s);
-    const x = base.x + p.value * scale * nx;
-    const y = base.y + p.value * scale * ny;
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  ctx.stroke();
-}
-
-function drawTemp() {
-  if (temp?.type === "element") {
-    ctx.beginPath();
-    ctx.moveTo(temp.n1.x, temp.n1.y);
-    ctx.lineTo(mouse.x, mouse.y);
-    ctx.stroke();
   }
 
-  if (temp?.type === "distLoad") {
-    const p0 = pointOn(temp.el, temp.s0);
-    ctx.beginPath();
-    ctx.moveTo(p0.x, p0.y);
-    ctx.lineTo(mouse.x, mouse.y);
-    ctx.stroke();
+  const x = Array(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) {
+    x[i] = b[i];
+    for (let j = i + 1; j < n; j++) x[i] -= A[i][j] * x[j];
+    x[i] /= A[i][i];
   }
-}
-
-function drawCrosshair() {
-  ctx.setLineDash([5, 5]);
-  ctx.beginPath();
-  ctx.moveTo(mouse.x, 0);
-  ctx.lineTo(mouse.x, canvas.height);
-  ctx.moveTo(0, mouse.y);
-  ctx.lineTo(canvas.width, mouse.y);
-  ctx.stroke();
-  ctx.setLineDash([]);
-}
-
-/* ==========================
-   UTIL
-========================== */
-function createNode(x, y) {
-  const n = { id: Date.now() + Math.random(), x, y };
-  model.nodes.push(n);
-  return n;
-}
-
-function pointOn(el, s) {
-  const r = s / el.length;
-  return {
-    x: el.n1.x + r * (el.n2.x - el.n1.x),
-    y: el.n1.y + r * (el.n2.y - el.n1.y)
-  };
-}
-
-function project(el, x, y) {
-  const dx = el.n2.x - el.n1.x;
-  const dy = el.n2.y - el.n1.y;
-  const L2 = dx * dx + dy * dy;
-
-  const t =
-    ((x - el.n1.x) * dx + (y - el.n1.y) * dy) / L2;
-
-  return Math.max(0, Math.min(1, t)) * el.length;
-}
-
-function findClosestElement(x, y) {
-  let best = null;
-  let min = 15;
-
-  model.elements.forEach(el => {
-    const d = distToSegment(el.n1, el.n2, x, y);
-    if (d < min) {
-      min = d;
-      best = el;
-    }
-  });
-
-  return best;
-}
-
-function distToSegment(n1, n2, x, y) {
-  const A = x - n1.x;
-  const B = y - n1.y;
-  const C = n2.x - n1.x;
-  const D = n2.y - n1.y;
-
-  const dot = A * C + B * D;
-  const lenSq = C * C + D * D;
-  let t = dot / lenSq;
-  t = Math.max(0, Math.min(1, t));
-
-  const px = n1.x + t * C;
-  const py = n1.y + t * D;
-
-  return Math.hypot(x - px, y - py);
+  return x;
 }
