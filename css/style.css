@@ -14,49 +14,32 @@ header {
   color: white;
 }
 
-#app {
+#layout {
   display: flex;
   height: calc(100vh - 60px);
 }
 
 #sidebar {
   width: 260px;
-  background: #e5e7eb;
   padding: 12px;
-  overflow-y: auto;
+  background: #e5e7eb;
   border-right: 1px solid #cbd5e1;
 }
 
+#sidebar section {
+  margin-bottom: 16px;
+}
+
 #sidebar h2 {
-  margin-top: 0;
+  margin: 0 0 6px 0;
+  font-size: 16px;
 }
 
-.load-item {
-  background: white;
-  padding: 8px;
-  margin-bottom: 8px;
-  border-radius: 4px;
-  border: 1px solid #cbd5e1;
-}
-
-.load-item input {
+#sidebar button,
+#sidebar input {
   width: 100%;
-  margin-bottom: 4px;
-}
-
-.load-item button {
-  width: 100%;
-  margin-top: 4px;
-  background: #dc2626;
-  color: white;
-  border: none;
-  padding: 4px;
-  cursor: pointer;
-}
-
-.hint {
-  font-size: 13px;
-  color: #475569;
+  margin-bottom: 6px;
+  padding: 6px;
 }
 
 main {
@@ -65,27 +48,15 @@ main {
   flex-direction: column;
 }
 
-#toolbar {
-  padding: 8px;
-  background: #e2e8f0;
+canvas {
+  background: white;
   border-bottom: 1px solid #cbd5e1;
 }
 
-#toolbar button {
-  margin-right: 4px;
+#diagrams {
+  padding-top: 20px;
 }
 
-canvas {
-  background: white;
-  flex: 1;
-  cursor: crosshair;
+#shearCanvas {
+  margin-bottom: 30px;
 }
-hr {
-  margin: 12px 0;
-  border: none;
-  border-top: 1px solid #cbd5e1;
-}
-
-
-
-
