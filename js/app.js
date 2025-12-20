@@ -31,20 +31,18 @@ function setSupport(nodeId, fixX, fixY, fixM) {
     model.supports.push({ node, fixed: [fixX, fixY, fixM] });
   }
 }
-function removeSupport(nodeId) { model.supports = model.supports.filter(s => s.node.id !== nodeId); }
 
 /* =====================================================
    EDIÇÃO INTERATIVA DE CARGAS
 ===================================================== */
 let selectedLoad = null;
-let dragType = null; // 'force' ou 'moment'
+let dragType = null;
 
 function addLoad(nodeId, valueX=0, valueY=0, moment=0) {
   const node = model.nodes.find(n => n.id === nodeId);
   if (!node) throw new Error("Nó não encontrado");
   model.loads.push({ node, valueX, valueY, moment });
 }
-function removeLoad(nodeId) { model.loads = model.loads.filter(l => l.node.id !== nodeId); }
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -54,6 +52,7 @@ canvas.addEventListener("mousedown", e => {
   selectedLoad = model.loads.find(l => Math.abs(l.node.x - pos.x) < 10 && Math.abs(l.node.y - pos.y) < 10);
   if (selectedLoad) dragType = 'force';
 });
+
 canvas.addEventListener("mousemove", e => {
   if (selectedLoad && dragType==='force') {
     const dx = e.offsetX - selectedLoad.node.x;
@@ -63,6 +62,7 @@ canvas.addEventListener("mousemove", e => {
     solveStructure(); draw();
   }
 });
+
 canvas.addEventListener("mouseup", e => { selectedLoad = null; dragType=null; });
 
 /* =====================================================
@@ -118,9 +118,9 @@ function solveStructure() {
 }
 
 /* =====================================================
-   FUNÇÃO DE DESENHO COM FUNDO QUADRICULADO
+   FUNÇÃO DE DESENHO AVANÇADO
 ===================================================== */
-function drawGrid(ctx, width, height, step=20) {
+function drawGrid(ctx, width, height, step=25) {
   ctx.strokeStyle = "#eee";
   ctx.lineWidth = 0.5;
   for(let x=0;x<=width;x+=step){
@@ -133,23 +133,53 @@ function drawGrid(ctx, width, height, step=20) {
 
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  drawGrid(ctx, canvas.width, canvas.height, 25);
+  drawGrid(ctx, canvas.width, canvas.height);
 
-  // Elementos
+  // Elementos (vigas)
   ctx.strokeStyle="black";
-  ctx.lineWidth = 2;
+  ctx.lineWidth=2;
   model.elements.forEach(el=>{
     ctx.beginPath();
     ctx.moveTo(el.n1.x,el.n1.y);
     ctx.lineTo(el.n2.x,el.n2.y);
     ctx.stroke();
 
-    // Desenhar gráficos de esforços (simplificado)
-    // Ex: momento fletor acima da barra
-    const mx = (el.n1.x + el.n2.x)/2;
-    const my = (el.n1.y + el.n2.y)/2 - 30; // acima da barra
-    ctx.fillStyle="purple";
-    ctx.fillText("M", mx-5, my);
+    // Gráficos de esforços simplificados (educativo)
+    const nx = el.n2.x - el.n1.x;
+    const ny = el.n2.y - el.n1.y;
+    const length = Math.hypot(nx, ny);
+    const angle = Math.atan2(ny, nx);
+
+    // Função para converter valor de esforço em pixels
+    const scale = 0.02;
+
+    // Desenhar momento fletor
+    ctx.strokeStyle = "purple";
+    ctx.beginPath();
+    for(let t=0;t<=1;t+=0.05){
+      const x = el.n1.x + nx*t;
+      const y = el.n1.y + ny*t - scale*50*Math.sin(Math.PI*t); // curva senoidal para momento
+      if(t===0) ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    ctx.fillText("M", el.n1.x + nx/2, el.n1.y - 55);
+
+    // Desenhar cortante
+    ctx.strokeStyle = "orange";
+    ctx.beginPath();
+    ctx.moveTo(el.n1.x, el.n1.y - scale*30);
+    ctx.lineTo(el.n2.x, el.n2.y - scale*30);
+    ctx.stroke();
+    ctx.fillText("V", el.n2.x + 5, el.n2.y - 30);
+
+    // Desenhar normal
+    ctx.strokeStyle = "green";
+    ctx.beginPath();
+    ctx.moveTo(el.n1.x, el.n1.y);
+    ctx.lineTo(el.n2.x, el.n2.y);
+    ctx.stroke();
+    ctx.fillText("N", el.n2.x + 5, el.n2.y + 15);
   });
 
   // Nós
