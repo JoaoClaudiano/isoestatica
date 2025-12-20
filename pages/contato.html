@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Contato - Isostática Interativa</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { 
+    font-family: Arial, sans-serif; 
+    margin:0; 
+    background:#f0f4f8; 
+    color:#333; 
+    line-height:1.6;
+  }
+  header {
+    background:#005b96;
+    color:white;
+    padding:15px 20px;
+    text-align:center;
+  }
+  main {
+    max-width:900px;
+    margin:20px auto;
+    background:white;
+    padding:20px;
+    border-radius:8px;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+  }
+  main h2 {
+    color:#005b96;
+    margin-top:20px;
+    margin-bottom:10px;
+  }
+  main p {
+    text-align:justify;
+    margin-bottom:15px;
+  }
+  form {
+    display:flex;
+    flex-direction:column;
+  }
+  label {
+    margin-top:10px;
+    font-weight:bold;
+  }
+  input, textarea {
+    margin-top:5px;
+    padding:8px;
+    border-radius:4px;
+    border:1px solid #ccc;
+    font-size:1em;
+  }
+  textarea { resize:vertical; min-height:100px; }
+  button {
+    margin-top:15px;
+    padding:10px;
+    background:#005b96;
+    color:white;
+    border:none;
+    border-radius:4px;
+    cursor:pointer;
+    font-size:1em;
+  }
+  button:hover { background:#007acc; }
+  footer {
+    background:#005b96;
+    color:white;
+    padding:15px;
+    text-align:center;
+    font-size:0.9em;
+  }
+  footer a { color:white; text-decoration:underline; margin:0 5px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Contato - Isostática Interativa</h1>
+</header>
+
+<main>
+  <h2>Entre em Contato</h2>
+  <p>
+    Se você tem dúvidas, sugestões ou precisa de suporte, entre em contato conosco preenchendo o formulário abaixo. Nossa equipe responderá o mais breve possível.
+  </p>
+
+  <form action="mailto:suporte@exemplo.com" method="post" enctype="text/plain">
+    <label for="name">Nome:</label>
+    <input type="text" id="name" name="name" placeholder="Seu nome" required>
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" placeholder="seuemail@exemplo.com" required>
+
+    <label for="subject">Assunto:</label>
+    <input type="text" id="subject" name="subject" placeholder="Assunto da mensagem" required>
+
+    <label for="message">Mensagem:</label>
+    <textarea id="message" name="message" placeholder="Escreva sua mensagem aqui..." required></textarea>
+
+    <button type="submit">Enviar</button>
+  </form>
+
+  <h2>Informações de Contato</h2>
+  <p>
+    Email: <a href="mailto:jooclaudiano@gmail.com">suporte@gmail.com</a>
+  </p>
+
+
+<footer>
+  <p>© 2025 Isostática Interativa | Desenvolvido com ❤️ por João Claudiano</p>
+  <p>
+    <a href="pages/politica.html">Política de Privacidade</a> |
+    <a href="pages/termos.html">Termos de Uso</a> |
+    <a href="pages/sobre.html">Sobre</a> |
+    <a href="pages/contato.html">Contato</a>
+  </p>
+</footer>
+
+</body>
+</html>
