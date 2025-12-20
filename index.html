@@ -5,7 +5,44 @@
 <title>Estrutura Interativa</title>
 <link rel="stylesheet" href="style.css">
 <style>
-  body { font-family: Arial, sans-serif; margin: 20px; }
+  body { font-family: Arial, sans-serif; margin: 0; }
+  header { display: flex; align-items: center; justify-content: space-between; background:#333; color:#fff; padding:10px 20px; }
+  header h2 { margin:0; font-size:1.2em; }
+  #hamburger { font-size:24px; cursor:pointer; }
+  
+  /* Sidebar */
+  #sidebar {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    background-color: #444;
+    overflow-x: hidden;
+    transition: 0.3s;
+    padding-top: 60px;
+    color: #fff;
+  }
+  #sidebar a {
+    padding: 10px 20px;
+    text-decoration: none;
+    display: block;
+    color: #fff;
+    transition: 0.2s;
+  }
+  #sidebar a:hover { background-color: #555; }
+  #sidebar .closebtn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+  }
+
+  /* Main content */
+  #main { margin: 20px; }
+
   #controls button { margin-right: 5px; margin-bottom: 10px; }
   #infoCard, #memoryCard { 
     background-color: #f9f9f9; 
@@ -15,34 +52,54 @@
     border-radius: 8px; 
     max-width: 900px;
   }
-  canvas { border: 1px solid #999; }
+  canvas { border: 1px solid #999; display: block; margin-top:10px; }
 </style>
 </head>
 <body>
 
-<h2>Estrutura Interativa</h2>
+<header>
+  <h2>Estrutura Interativa</h2>
+  <span id="hamburger">&#9776;</span>
+</header>
 
-<div id="controls">
-  <button onclick="addNodePrompt()">Adicionar Nó</button>
-  <button onclick="addSupportPrompt()">Adicionar Apoio</button>
-  <button onclick="addLoadPrompt()">Adicionar Carga</button>
-  <button onclick="resetStructure()">Resetar Estrutura</button>
-  <button onclick="toggleEfforts()">Alternar Esforços (M, V, N)</button>
+<div id="sidebar">
+  <span class="closebtn" onclick="closeSidebar()">&times;</span>
+  <a href="aba/metodologia-vigas.html" target="_blank">Metodologia Vigas</a>
+  <a href="aba/metodologia-trelicas.html" target="_blank">Metodologia Treliças</a>
+  <a href="aba/sobre-nos.html" target="_blank">Sobre Nós</a>
+  <a href="aba/contato.html" target="_blank">Contato</a>
 </div>
 
-<canvas id="canvas" width="900" height="500"></canvas>
+<div id="main">
+  <div id="controls">
+    <button onclick="addNodePrompt()">Adicionar Nó</button>
+    <button onclick="addSupportPrompt()">Adicionar Apoio</button>
+    <button onclick="addLoadPrompt()">Adicionar Carga</button>
+    <button onclick="resetStructure()">Resetar Estrutura</button>
+    <button onclick="toggleEfforts()">Alternar Esforços (M, V, N)</button>
+  </div>
 
-<div id="memoryCard">
-  <h3>Memória de cálculo das reações</h3>
-  <div id="reactionMemory">
-    Nenhuma reação calculada ainda.
+  <canvas id="canvas" width="900" height="500"></canvas>
+
+  <div id="memoryCard">
+    <h3>Memória de cálculo das reações</h3>
+    <div id="reactionMemory">
+      Nenhuma reação calculada ainda.
+    </div>
   </div>
 </div>
 
 <script src="app.js"></script>
 
 <script>
-/* Funções para interação e prompts */
+/* Sidebar */
+const sidebar = document.getElementById("sidebar");
+const hamburger = document.getElementById("hamburger");
+
+hamburger.onclick = () => { sidebar.style.width = "250px"; };
+function closeSidebar() { sidebar.style.width = "0"; }
+
+/* Funções de interação */
 function addNodePrompt() {
   const x = parseFloat(prompt("Posição X do nó (em pixels):"));
   const y = parseFloat(prompt("Posição Y do nó (em pixels):"));
