@@ -1,40 +1,41 @@
 // Isostática Lab - Aplicação Principal
-constructor() {
-    this.currentStructure = null;
-    this.structureType = 'beam';
-    this.currentTool = 'select';
-    this.selectedElement = null;
-    this.isCalculated = false;
-    this.renderer = null;
-    this.calculator = null;
-    this.ui = null;
-    this.canvasHandler = null;
+class IsostaticaApp {
+    constructor() {
+        this.currentStructure = null;
+        this.structureType = 'beam';
+        this.currentTool = 'select';
+        this.selectedElement = null;
+        this.isCalculated = false;
+        this.renderer = null;
+        this.calculator = null;
+        this.ui = null;
+        this.canvasHandler = null;
+        
+        this.init();
+    }
     
-    this.init();
-}
-
-init() {
-    // Configurar eventos
-    this.setupEventListeners();
-    
-    // Inicializar renderizador
-    this.renderer = new StructureRenderer('structure-canvas');
-    
-    // Inicializar calculadora
-    this.calculator = new StructureCalculator();
-    
-    // Inicializar interface
-    this.ui = new UIControls(this);
-    
-    // Inicializar manipulador do canvas
-    this.canvasHandler = new CanvasHandler(this, this.renderer);
-    
-    // Inicializar módulo atual (viga por padrão)
-    this.loadStructureModule('beam');
-    
-    // Mostrar tela de boas-vindas
-    this.showWelcomeScreen();
-}
+    init() {
+        // Configurar eventos
+        this.setupEventListeners();
+        
+        // Inicializar renderizador
+        this.renderer = new StructureRenderer('structure-canvas');
+        
+        // Inicializar calculadora
+        this.calculator = new StructureCalculator();
+        
+        // Inicializar interface
+        this.ui = new UIControls(this);
+        
+        // Inicializar manipulador do canvas
+        this.canvasHandler = new CanvasHandler(this, this.renderer);
+        
+        // Inicializar módulo atual (viga por padrão)
+        this.loadStructureModule('beam');
+        
+        // Mostrar tela de boas-vindas
+        this.showWelcomeScreen();
+    }
     
     setupEventListeners() {
         // Navegação
@@ -76,18 +77,14 @@ init() {
         // Vínculos
         document.querySelectorAll('.support-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                this.currentTool = 'support';
-                this.selectedSupportType = btn.dataset.support;
-                this.updateUI();
+                this.ui.setSupportType(btn.dataset.support);
             });
         });
         
         // Cargas
         document.querySelectorAll('.load-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                this.currentTool = 'load';
-                this.selectedLoadType = btn.dataset.load;
-                this.updateUI();
+                this.ui.setLoadType(btn.dataset.load);
             });
         });
         
@@ -101,18 +98,7 @@ init() {
             this.resetStructure();
         });
         
-        // Controles do canvas
-        document.getElementById('zoom-in').addEventListener('click', () => {
-            this.renderer.zoomIn();
-        });
-        
-        document.getElementById('zoom-out').addEventListener('click', () => {
-            this.renderer.zoomOut();
-        });
-        
-        document.getElementById('fit-view').addEventListener('click', () => {
-            this.renderer.fitToView();
-        });
+        // Controles do canvas (já gerenciados pelo CanvasHandler)
         
         // Toggles de diagramas
         document.getElementById('toggle-N').addEventListener('change', (e) => {
@@ -142,16 +128,7 @@ init() {
             });
         });
         
-        // Atualizar coordenadas
-        canvas.addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const worldCoords = this.renderer.screenToWorld(x, y);
-            
-            document.getElementById('coordinate-display').textContent = 
-                `X: ${worldCoords.x.toFixed(2)} m, Y: ${worldCoords.y.toFixed(2)} m`;
-        });
+        // Atualizar coordenadas (já gerenciado pelo CanvasHandler)
     }
     
     showWelcomeScreen() {
@@ -290,49 +267,15 @@ init() {
         return names[tool] || tool;
     }
     
-    handleCanvasClick(e) {
-        const rect = e.target.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const worldCoords = this.renderer.screenToWorld(x, y);
-        
-        switch(this.currentTool) {
-            case 'node':
-                this.addNode(worldCoords.x, worldCoords.y);
-                break;
-            case 'beam':
-                this.addBeamAt(worldCoords.x, worldCoords.y);
-                break;
-            case 'support':
-                this.addSupportAt(worldCoords.x, worldCoords.y);
-                break;
-            case 'load':
-                this.addLoadAt(worldCoords.x, worldCoords.y);
-                break;
-            case 'delete':
-                this.deleteAt(worldCoords.x, worldCoords.y);
-                break;
-            case 'select':
-                this.selectAt(worldCoords.x, worldCoords.y);
-                break;
-        }
-        
-        this.renderer.render();
-    }
-    
     addNode(x, y) {
-        if (!this.currentStructure) return;
-        
         const node = this.currentStructure.addNode(x, y);
         this.updateStructureInfo();
         this.updateStatusMessage(`Nó adicionado em (${x.toFixed(2)}, ${y.toFixed(2)})`);
         
         // Renderizar novamente
         this.renderer.render();
-        
-        return node;
     }
-        
+    
     addBeamAt(x, y) {
         // Encontrar nó mais próximo
         const node = this.findNearestNode(x, y, 0.5); // 0.5m de tolerância
@@ -343,6 +286,7 @@ init() {
             this.selectedElement = null;
             this.updateStructureInfo();
             this.updateStatusMessage('Barra adicionada');
+            this.renderer.render();
         } else if (node) {
             // Selecionar nó para conectar
             this.selectedElement = { type: 'node', element: node };
@@ -353,10 +297,11 @@ init() {
     
     addSupportAt(x, y) {
         const node = this.findNearestNode(x, y, 0.5);
-        if (node && this.selectedSupportType) {
-            this.currentStructure.addSupport(node, this.selectedSupportType);
+        if (node && this.ui.getCurrentSupportType()) {
+            this.currentStructure.addSupport(node, this.ui.getCurrentSupportType());
             this.updateStructureInfo();
-            this.updateStatusMessage(`Vínculo ${this.selectedSupportType} adicionado`);
+            this.updateStatusMessage(`Vínculo ${this.ui.getCurrentSupportType()} adicionado`);
+            this.renderer.render();
         }
     }
     
@@ -364,19 +309,21 @@ init() {
         const magnitude = parseFloat(document.getElementById('load-magnitude').value);
         const direction = parseFloat(document.getElementById('load-direction').value);
         
-        if (this.selectedLoadType === 'point') {
+        if (this.ui.getCurrentLoadType() === 'point') {
             const node = this.findNearestNode(x, y, 0.5);
             if (node) {
                 this.currentStructure.addPointLoad(node, magnitude, direction);
                 this.updateStatusMessage(`Carga pontual de ${magnitude} kN adicionada`);
+                this.renderer.render();
             }
-        } else if (this.selectedLoadType === 'distributed') {
+        } else if (this.ui.getCurrentLoadType() === 'distributed') {
             // Implementar carga distribuída
-        } else if (this.selectedLoadType === 'moment') {
+        } else if (this.ui.getCurrentLoadType() === 'moment') {
             const node = this.findNearestNode(x, y, 0.5);
             if (node) {
                 this.currentStructure.addMoment(node, magnitude);
                 this.updateStatusMessage(`Momento de ${magnitude} kN.m adicionado`);
+                this.renderer.render();
             }
         }
     }
@@ -390,6 +337,10 @@ init() {
     }
     
     findNearestNode(x, y, tolerance) {
+        if (!this.currentStructure || !this.currentStructure.nodes) {
+            return null;
+        }
+        
         let nearest = null;
         let minDist = Infinity;
         
@@ -412,7 +363,7 @@ init() {
             const isIsostatic = this.calculator.checkIsostaticity(this.currentStructure);
             
             if (!isIsostatic) {
-                this.showToast('Estrutura não é isostática! Verifique os vínculos.', 'error');
+                this.ui.showToast('Estrutura não é isostática! Verifique os vínculos.', 'error');
                 return;
             }
             
@@ -434,10 +385,10 @@ init() {
             this.updateResults(reactions, internalForces);
             this.updateStatus();
             
-            this.showToast('Cálculo realizado com sucesso!', 'success');
+            this.ui.showToast('Cálculo realizado com sucesso!', 'success');
             
         } catch (error) {
-            this.showToast(`Erro no cálculo: ${error.message}`, 'error');
+            this.ui.showToast(`Erro no cálculo: ${error.message}`, 'error');
         }
     }
     
@@ -477,6 +428,8 @@ init() {
     }
     
     updateStructureInfo() {
+        if (!this.currentStructure) return;
+        
         document.getElementById('bar-count').textContent = this.currentStructure.beams.length;
         document.getElementById('node-count').textContent = this.currentStructure.nodes.length;
         
@@ -535,11 +488,6 @@ init() {
             this.loadStructureModule(this.structureType);
             this.updateStatusMessage('Estrutura reiniciada');
         }
-    }
-    
-    showToast(message, type = 'info') {
-        // Implementar sistema de notificações
-        console.log(`${type.toUpperCase()}: ${message}`);
     }
 }
 
