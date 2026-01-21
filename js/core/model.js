@@ -8,7 +8,6 @@ class Node {
         this.loads = [];
     }
 }
-
 class Beam {
     constructor(id, startNode, endNode) {
         this.id = id;
