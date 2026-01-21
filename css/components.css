@@ -537,3 +537,423 @@
 .dropdown-item:hover {
     background: var(--bg-tertiary);
 }
+/* Estilos adicionais para tooltips e mensagens */
+
+/* Tooltip de hover */
+.hover-tooltip {
+    position: fixed;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-sm);
+    box-shadow: var(--shadow-md);
+    z-index: 1000;
+    max-width: 200px;
+    display: none;
+    pointer-events: none;
+}
+
+.hover-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 10px;
+    width: 10px;
+    height: 10px;
+    background: white;
+    border-left: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-color);
+    transform: rotate(45deg);
+}
+
+.tooltip-header {
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+    color: var(--primary-color);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: var(--spacing-xs);
+}
+
+.tooltip-item {
+    display: flex;
+    justify-content: space-between;
+    margin: 2px 0;
+    font-size: 0.9rem;
+}
+
+.tooltip-label {
+    color: var(--text-secondary);
+    margin-right: var(--spacing-sm);
+}
+
+.tooltip-value {
+    font-weight: 600;
+    font-family: var(--font-mono);
+}
+
+/* Mensagem de conclusão */
+.completion-message {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+
+.completion-message.show {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.completion-content {
+    background: white;
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-xl);
+    text-align: center;
+    max-width: 400px;
+    box-shadow: var(--shadow-lg);
+}
+
+.completion-content i {
+    font-size: 4rem;
+    color: var(--secondary-color);
+    margin-bottom: var(--spacing-md);
+}
+
+.completion-content h4 {
+    margin-bottom: var(--spacing-sm);
+    color: var(--primary-color);
+}
+
+.completion-content p {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-secondary);
+}
+
+/* Dica contextual */
+.context-hint {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--primary-color);
+    color: white;
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    max-width: 300px;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 1000;
+}
+
+.context-hint.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.context-hint i {
+    font-size: 1.2rem;
+    color: var(--warning-color);
+}
+
+/* Tutorial */
+.tutorial-step {
+    text-align: center;
+    padding: var(--spacing-md);
+}
+
+.tutorial-image {
+    font-size: 4rem;
+    margin: var(--spacing-lg) 0;
+    opacity: 0.8;
+}
+
+.tutorial-hint {
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+    text-align: left;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.tutorial-hint i {
+    color: var(--warning-color);
+    margin-right: var(--spacing-xs);
+}
+
+/* Animações */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Estilos para erros */
+.error {
+    border-color: var(--danger-color) !important;
+    background: rgba(231, 76, 60, 0.1) !important;
+}
+
+.error-message {
+    color: var(--danger-color);
+    font-size: 0.8rem;
+    margin-top: 4px;
+}
+
+/* Estilos para valores */
+.value-positive {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.value-negative {
+    color: var(--danger-color);
+    font-weight: 600;
+}
+
+.value-zero {
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* Estilos para os ícones de vínculo */
+.support-icon {
+    width: 40px;
+    height: 40px;
+    position: relative;
+    margin: 0 auto;
+}
+
+.support-icon.roller::before,
+.support-icon.roller::after {
+    content: '';
+    position: absolute;
+    background: var(--primary-color);
+}
+
+.support-icon.roller::before {
+    width: 30px;
+    height: 3px;
+    bottom: 5px;
+    left: 5px;
+}
+
+.support-icon.roller::after {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--primary-color);
+    bottom: 15px;
+    left: 15px;
+}
+
+.support-icon.pinned::before,
+.support-icon.pinned::after {
+    content: '';
+    position: absolute;
+    background: var(--primary-color);
+}
+
+.support-icon.pinned::before {
+    width: 30px;
+    height: 3px;
+    bottom: 5px;
+    left: 5px;
+}
+
+.support-icon.pinned::after {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 2px solid var(--primary-color);
+    bottom: 10px;
+    left: 12.5px;
+}
+
+.support-icon.fixed::before,
+.support-icon.fixed::after {
+    content: '';
+    position: absolute;
+    background: var(--primary-color);
+}
+
+.support-icon.fixed::before {
+    width: 30px;
+    height: 10px;
+    bottom: 0;
+    left: 5px;
+}
+
+.support-icon.fixed::after {
+    width: 20px;
+    height: 3px;
+    bottom: 10px;
+    left: 10px;
+    transform: rotate(45deg);
+}
+
+.support-icon.hinge::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--primary-color);
+    border-radius: 50%;
+    top: 10px;
+    left: 10px;
+}
+
+.support-icon.hinge::after {
+    content: '+';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 10px;
+    left: 10px;
+    text-align: center;
+    line-height: 20px;
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+/* Load indicators */
+.load-indicator {
+    width: 40px;
+    height: 40px;
+    position: relative;
+    margin: 0 auto;
+}
+
+.load-indicator.point::before,
+.load-indicator.point::after {
+    content: '';
+    position: absolute;
+    background: var(--primary-color);
+}
+
+.load-indicator.point::before {
+    width: 2px;
+    height: 30px;
+    top: 5px;
+    left: 19px;
+}
+
+.load-indicator.point::after {
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 10px solid var(--primary-color);
+    top: 5px;
+    left: 12px;
+}
+
+.load-indicator.distributed::before {
+    content: '';
+    position: absolute;
+    width: 30px;
+    height: 10px;
+    background: repeating-linear-gradient(
+        to right,
+        var(--primary-color),
+        var(--primary-color) 2px,
+        transparent 2px,
+        transparent 4px
+    );
+    top: 15px;
+    left: 5px;
+}
+
+.load-indicator.moment::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--primary-color);
+    border-radius: 50%;
+    top: 10px;
+    left: 10px;
+}
+
+.load-indicator.moment::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 2px solid transparent;
+    border-top: 2px solid var(--primary-color);
+    border-right: 2px solid var(--primary-color);
+    border-radius: 50%;
+    top: 14px;
+    left: 14px;
+    transform: rotate(45deg);
+}
+
+/* Legendas */
+.legend {
+    background: white;
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-sm);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin: 4px 0;
+    font-size: 0.9rem;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    margin-right: 8px;
+}
+
+.legend-label {
+    color: var(--text-secondary);
+}
+
+
+
+
+
+
