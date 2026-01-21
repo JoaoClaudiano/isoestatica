@@ -52,6 +52,12 @@ class CanvasHandler {
 
     handleCanvasMouseDown(e) {
         e.preventDefault();
+
+        if (!this.canvas || !this.app || !this.app.currentStructure) {
+        console.error('CanvasHandler não está inicializado corretamente');
+        return;
+        }
+        
         const rect = this.canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
