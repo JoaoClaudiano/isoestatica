@@ -1,71 +1,69 @@
-// Isostática Lab - Aplicação Principal Simplificada
-// NO TOPO DO app.js - Substitua a inicialização atual
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM carregado, inicializando canvas...');
-    
-    // Aguardar um pouco para garantir que tudo está pronto
-    setTimeout(initApp, 100);
-});
-
-function initApp() {
-    const canvas = document.getElementById('structure-canvas');
-    
-    if (!canvas) {
-        console.error('❌ Canvas não encontrado! Verificando elementos...');
-        console.log('Elementos com ID:', document.querySelectorAll('[id]'));
-        return;
-    }
-    
-    console.log('✅ Canvas encontrado:', canvas);
-    console.log('Dimensões:', canvas.clientWidth, 'x', canvas.clientHeight);
-    
-    // Verificar se o canvas está visível
-    const style = window.getComputedStyle(canvas);
-    if (style.display === 'none') {
-        console.warn('⚠️ Canvas está com display:none');
-    }
-    
-    // Inicializar contexto
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-        console.error('❌ Não foi possível obter contexto 2D');
-        return;
-    }
-    
-    console.log('✅ Contexto 2D inicializado com sucesso!');
-    
-    // Restante da sua inicialização...
-    // Inicializar controles, módulos, etc.
-}
+// Isostática Lab - Aplicação Principal
+// Versão corrigida - Removida inicialização duplicada
 
 class IsostaticaApp {
     constructor() {
+        console.log('Construtor IsostaticaApp chamado...');
+        
         this.currentStructure = null;
         this.structureType = 'beam';
         this.isCalculated = false;
         this.renderer = null;
+        this.canvas = null;
+        this.ctx = null;
         
-        // Inicialização tardia para garantir DOM
-        setTimeout(() => this.init(), 100);
+        // Inicialização após garantir DOM e canvas
+        this.initApp();
     }
     
-    init() {
+    initApp() {
         console.log('Inicializando Isostática Lab...');
         
-        // Inicializar renderizador
-        this.renderer = new StructureRenderer('structure-canvas');
+        // 1. PRIMEIRO: Encontrar e configurar o canvas
+        this.canvas = document.getElementById('structure-canvas');
         
-        // Inicializar interface
+        if (!this.canvas) {
+            console.error('❌ Canvas não encontrado! Verificando elementos...');
+            console.log('Elementos com ID:', document.querySelectorAll('[id]'));
+            return;
+        }
+        
+        console.log('✅ Canvas encontrado:', this.canvas);
+        console.log('Dimensões:', this.canvas.clientWidth, 'x', this.canvas.clientHeight);
+        
+        // Verificar se o canvas está visível
+        const style = window.getComputedStyle(this.canvas);
+        if (style.display === 'none') {
+            console.warn('⚠️ Canvas está com display:none');
+        }
+        
+        // Inicializar contexto
+        this.ctx = this.canvas.getContext('2d');
+        if (!this.ctx) {
+            console.error('❌ Não foi possível obter contexto 2D');
+            return;
+        }
+        
+        console.log('✅ Contexto 2D inicializado com sucesso!');
+        
+        // 2. SEGUNDO: Inicializar renderizador (passando contexto)
+        this.renderer = new StructureRenderer(this.canvas, this.ctx);
+        
+        // 3. TERCEIRO: Inicializar interface
         this.ui = new UIControls(this);
         
-        // Configurar eventos básicos
+        // 4. QUARTO: Configurar eventos
         this.setupBasicEventListeners();
         
-        // Carregar módulo padrão
+        // 5. QUINTO: Carregar módulo padrão
         this.loadStructureModule('beam');
+        
+        console.log('✅ Isostática Lab totalmente inicializado!');
     }
     
     setupBasicEventListeners() {
+        console.log('Configurando listeners de evento...');
+        
         // Botão de voltar ao menu
         const backBtn = document.getElementById('back-to-menu');
         if (backBtn) {
@@ -108,6 +106,18 @@ class IsostaticaApp {
                 this.switchTab(tabId);
             });
         });
+        
+        // Botão Calcular
+        const calculateBtn = document.getElementById('btn-calculate');
+        if (calculateBtn) {
+            calculateBtn.addEventListener('click', () => this.calculateStructure());
+        }
+        
+        // Botão Reiniciar
+        const resetBtn = document.getElementById('btn-reset');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => this.resetStructure());
+        }
     }
     
     showWelcomeScreen() {
@@ -136,30 +146,51 @@ class IsostaticaApp {
                                type === 'grid' ? 'Grelha Isostática' : 'Arco Isostático';
         }
         
+        // Atualizar indicador
+        const indicator = document.getElementById('structure-type-indicator');
+        if (indicator) {
+            indicator.textContent = type === 'beam' ? 'VIGA' :
+                                   type === 'frame' ? 'PÓRTICO' :
+                                   type === 'grid' ? 'GRELHA' : 'ARCO';
+        }
+        
         // Criar nova estrutura
         switch(type) {
             case 'beam':
-                this.currentStructure = new BeamStructure();
+                if (typeof BeamStructure !== 'undefined') {
+                    this.currentStructure = new BeamStructure();
+                } else {
+                    console.error('BeamStructure não definido!');
+                }
                 break;
             case 'frame':
-                this.currentStructure = new FrameStructure();
+                if (typeof FrameStructure !== 'undefined') {
+                    this.currentStructure = new FrameStructure();
+                }
                 break;
             case 'grid':
-                this.currentStructure = new GridStructure();
+                if (typeof GridStructure !== 'undefined') {
+                    this.currentStructure = new GridStructure();
+                }
                 break;
             case 'arch':
-                this.currentStructure = new ArchStructure();
+                if (typeof ArchStructure !== 'undefined') {
+                    this.currentStructure = new ArchStructure();
+                }
                 break;
         }
         
         // Atualizar renderizador
-        if (this.renderer) {
+        if (this.renderer && this.currentStructure) {
             this.renderer.setStructure(this.currentStructure);
             this.renderer.render();
         }
         
         // Atualizar informações
         this.updateStructureInfo();
+        
+        // Log para depuração
+        console.log('Módulo carregado:', type, 'Estrutura:', this.currentStructure);
     }
     
     loadExample(exampleId) {
@@ -251,11 +282,17 @@ class IsostaticaApp {
     }
 }
 
-// Inicializar quando o DOM estiver pronto
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
+// Inicialização ÚNICA quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM carregado, iniciando Isostática Lab...');
+    
+    // Aguardar um pouco para garantir que todos os scripts estão carregados
+    setTimeout(() => {
         window.app = new IsostaticaApp();
-    });
-} else {
-    window.app = new IsostaticaApp();
+    }, 100);
+});
+
+// Para acesso global
+if (typeof window !== 'undefined') {
+    window.IsostaticaApp = IsostaticaApp;
 }
