@@ -231,3 +231,67 @@
         color: white;
     }
 }
+/* Scroll horizontal para telas menores */
+@media (max-width: 1200px) {
+    .main-container {
+        overflow-x: auto;
+        overflow-y: hidden;
+        min-width: 1024px; /* Largura mínima para evitar quebra */
+    }
+    
+    .left-panel, .right-panel {
+        flex-shrink: 0; /* Impede que os painéis encolham */
+    }
+    
+    .center-area {
+        min-width: 500px; /* Largura mínima para a área central */
+    }
+}
+
+/* Para telas muito pequenas, ativar scroll horizontal na página inteira */
+@media (max-width: 768px) {
+    body {
+        overflow-x: auto;
+        min-width: 800px;
+    }
+    
+    .main-interface {
+        min-width: 800px;
+    }
+}
+
+/* Ajustes para a tela de boas-vindas */
+@media (max-width: 768px) {
+    .welcome-container {
+        overflow-x: hidden;
+        overflow-y: auto;
+        max-height: 90vh;
+    }
+    
+    .structure-cards {
+        grid-template-columns: 1fr;
+        min-width: 300px;
+    }
+}
+
+/* Adicione um indicador visual de scroll */
+.main-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.main-container::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+.main-container::-webkit-scrollbar-thumb {
+    background: var(--secondary-color);
+    border-radius: 4px;
+}
+
+.main-container::-webkit-scrollbar-thumb:hover {
+    background: #2980b9;
+}
+
+
+
