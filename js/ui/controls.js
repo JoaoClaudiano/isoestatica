@@ -29,6 +29,11 @@ class UIControls {
                 if (this.app.updateStatusMessage) {
                     this.app.updateStatusMessage(`Ferramenta: ${this.getToolName(tool)}`);
                 }
+                
+                // Se mudar de ferramenta, cancelar criação de barra em andamento
+                if (tool !== 'beam' && this.app.selectedNodeForBeam) {
+                    this.app.cancelBeamCreation();
+                }
             }
         });
 
@@ -59,10 +64,14 @@ class UIControls {
     addClickListener(selector, callback) {
         const elements = document.querySelectorAll(selector);
         elements.forEach(element => {
-            element.addEventListener('click', (e) => {
+            // Remover listeners antigos para evitar duplicação
+            const newElement = element.cloneNode(true);
+            element.parentNode.replaceChild(newElement, element);
+            
+            newElement.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                callback(element);
+                callback(newElement);
             });
         });
     }
@@ -108,6 +117,7 @@ class UIControls {
         const calculateBtn = document.getElementById('btn-calculate');
         const resetBtn = document.getElementById('btn-reset');
         const exportBtn = document.getElementById('btn-export');
+        const backBtn = document.getElementById('back-to-menu');
         
         if (calculateBtn) {
             calculateBtn.addEventListener('click', () => {
@@ -127,11 +137,22 @@ class UIControls {
             exportBtn.addEventListener('click', () => this.exportStructure());
         }
         
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                console.log('Voltar ao menu');
+                if (this.app.showWelcomeScreen) this.app.showWelcomeScreen();
+            });
+        }
+        
         // Toggles de diagramas
         ['N', 'V', 'M', 'T'].forEach(type => {
             const toggle = document.getElementById(`toggle-${type}`);
             if (toggle) {
-                toggle.addEventListener('change', (e) => {
+                // Remover listeners antigos
+                const newToggle = toggle.cloneNode(true);
+                toggle.parentNode.replaceChild(newToggle, toggle);
+                
+                newToggle.addEventListener('change', (e) => {
                     console.log(`Diagrama ${type}: ${e.target.checked}`);
                     if (this.app.renderer) {
                         this.app.renderer.toggleDiagram(type, e.target.checked);
@@ -160,9 +181,25 @@ class UIControls {
         const helpBtn = document.getElementById('btn-help');
         if (helpBtn) {
             helpBtn.addEventListener('click', () => {
-                alert('Isostática Lab - Ajuda\n\n1. Selecione uma ferramenta\n2. Clique no canvas para adicionar elementos\n3. Use os botões de zoom para navegar');
+                alert('Isostática Lab - Ajuda\n\n1. Selecione uma ferramenta\n2. Clique no canvas para adicionar elementos\n3. Para criar barras: selecione a ferramenta Barra, clique em um nó (ficará vermelho), depois clique em outro nó\n4. Use ESC para cancelar criação de barra\n5. Use os botões de zoom para navegar');
             });
         }
+        
+        // Botão configurações
+        const settingsBtn = document.getElementById('btn-settings');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => {
+                const modal = document.getElementById('settings-modal');
+                if (modal) modal.classList.remove('hidden');
+            });
+        }
+        
+        // Fechar modais
+        document.querySelectorAll('.modal-close').forEach(closeBtn => {
+            closeBtn.addEventListener('click', function() {
+                this.closest('.modal').classList.add('hidden');
+            });
+        });
         
         console.log('Todos os controles configurados!');
     }
@@ -200,6 +237,15 @@ class UIControls {
             };
             canvas.style.cursor = cursors[tool] || 'default';
         }
+        
+        // Feedback visual
+        if (this.app.updateStatusMessage) {
+            let message = `Ferramenta: ${this.getToolName(tool)}`;
+            if (tool === 'beam') {
+                message += ' - Clique em um nó para iniciar, depois em outro nó para criar barra';
+            }
+            this.app.updateStatusMessage(message);
+        }
     }
 
     setSupportType(type) {
@@ -214,6 +260,11 @@ class UIControls {
         const currentBtn = document.querySelector(`.support-btn[data-support="${type}"]`);
         if (currentBtn) {
             currentBtn.classList.add('active');
+        }
+        
+        // Feedback
+        if (this.app.updateStatusMessage) {
+            this.app.updateStatusMessage(`Vínculo selecionado: ${this.getSupportName(type)} - Clique em um nó para adicionar`);
         }
     }
 
@@ -235,6 +286,11 @@ class UIControls {
         const distProps = document.getElementById('distributed-props');
         if (distProps) {
             distProps.classList.toggle('hidden', type !== 'distributed');
+        }
+        
+        // Feedback
+        if (this.app.updateStatusMessage) {
+            this.app.updateStatusMessage(`Carga selecionada: ${this.getLoadName(type)} - Clique em um nó ou barra para adicionar`);
         }
     }
 
@@ -284,13 +340,21 @@ class UIControls {
 
     exportStructure() {
         if (this.app.currentStructure) {
-            const dataStr = JSON.stringify(this.app.currentStructure, null, 2);
+            // Remover propriedades temporárias antes de exportar
+            const structureToExport = JSON.parse(JSON.stringify(this.app.currentStructure));
+            structureToExport.nodes.forEach(node => {
+                delete node._highlighted;
+            });
+            
+            const dataStr = JSON.stringify(structureToExport, null, 2);
             const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
             
             const linkElement = document.createElement('a');
             linkElement.setAttribute('href', dataUri);
             linkElement.setAttribute('download', `estrutura_${new Date().getTime()}.json`);
+            document.body.appendChild(linkElement);
             linkElement.click();
+            document.body.removeChild(linkElement);
             
             this.showToast('Estrutura exportada como JSON!', 'success');
         } else {
@@ -315,6 +379,11 @@ class UIControls {
     showToast(message, type = 'info') {
         console.log(`Toast [${type}]: ${message}`);
         
+        // Remover toasts antigos
+        document.querySelectorAll('.toast-message').forEach(toast => {
+            toast.remove();
+        });
+        
         // Criar elemento toast
         const toast = document.createElement('div');
         toast.className = 'toast-message';
@@ -330,14 +399,32 @@ class UIControls {
             z-index: 10000;
             font-family: 'Inter', sans-serif;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            animation: slideIn 0.3s ease-out;
         `;
+        
+        // Adicionar estilo de animação
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
         
         document.body.appendChild(toast);
         
         // Remover após 3 segundos
         setTimeout(() => {
             if (toast.parentNode) {
-                toast.parentNode.removeChild(toast);
+                toast.style.animation = 'slideOut 0.3s ease-out';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
             }
         }, 3000);
     }
