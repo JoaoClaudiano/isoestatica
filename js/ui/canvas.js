@@ -14,6 +14,7 @@ class CanvasInteractions {
         this.init();
     }
 
+    
     init() {
         this.setupEventListeners();
     }
