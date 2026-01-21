@@ -1,0 +1,233 @@
+/* Responsividade */
+
+/* Tablets (768px - 1024px) */
+@media (max-width: 1024px) {
+    .main-container {
+        flex-direction: column;
+    }
+    
+    .left-panel, .right-panel {
+        width: 100%;
+        border-right: none;
+        border-left: none;
+        border-bottom: 1px solid var(--border-color);
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .center-area {
+        flex: 1;
+        min-height: 400px;
+    }
+    
+    .tool-grid,
+    .support-grid,
+    .load-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .diagram-toggle {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: var(--spacing-sm);
+    }
+}
+
+/* Smartphones (480px - 768px) */
+@media (max-width: 768px) {
+    .app-header {
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+    }
+    
+    .header-left,
+    .header-center,
+    .header-right {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .header-center {
+        order: 3;
+        margin-top: var(--spacing-sm);
+    }
+    
+    .structure-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .feature-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .tool-grid,
+    .support-grid,
+    .load-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .panel-tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+    
+    .tab-btn {
+        white-space: nowrap;
+        min-width: 80px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        max-height: 95vh;
+    }
+}
+
+/* Smartphones pequenos (até 480px) */
+@media (max-width: 480px) {
+    .welcome-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .structure-cards,
+    .feature-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tool-grid,
+    .support-grid,
+    .load-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .diagram-toggle {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .canvas-controls {
+        flex-direction: row;
+        top: auto;
+        bottom: 10px;
+        right: 10px;
+    }
+    
+    .coordinate-display {
+        font-size: 0.7rem;
+        bottom: 50px;
+    }
+    
+    .app-controls {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .btn-control {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .status-bar {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+        text-align: center;
+    }
+    
+    .status-left,
+    .status-center,
+    .status-right {
+        width: 100%;
+    }
+}
+
+/* Ajustes para orientação paisagem em smartphones */
+@media (max-height: 600px) and (orientation: landscape) {
+    .welcome-screen {
+        overflow-y: auto;
+        padding: var(--spacing-md);
+    }
+    
+    .welcome-container {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .main-container {
+        flex-direction: row;
+    }
+    
+    .left-panel,
+    .right-panel {
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+    }
+}
+
+/* Impressão */
+@media print {
+    .app-header,
+    .left-panel,
+    .right-panel,
+    .canvas-controls,
+    .diagram-controls,
+    .status-bar,
+    .modal,
+    .welcome-screen {
+        display: none !important;
+    }
+    
+    .main-interface {
+        display: block !important;
+    }
+    
+    .main-container {
+        display: block;
+        height: auto;
+    }
+    
+    .center-area {
+        display: block;
+        height: auto;
+    }
+    
+    #structure-canvas {
+        width: 100%;
+        height: auto;
+        max-height: none;
+    }
+    
+    body {
+        background: white;
+        color: black;
+        height: auto;
+        overflow: visible;
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    /* Ajustes para telas retina */
+    .support-icon {
+        background-size: 40px 40px;
+    }
+}
+
+/* Dark mode (opcional) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-primary: #121212;
+        --bg-secondary: #1e1e1e;
+        --bg-tertiary: #2d2d2d;
+        --text-primary: #ffffff;
+        --text-secondary: #a0a0a0;
+        --border-color: #404040;
+    }
+    
+    #structure-canvas {
+        background: #2d2d2d;
+    }
+    
+    .canvas-btn {
+        background: #404040;
+        color: white;
+    }
+}
