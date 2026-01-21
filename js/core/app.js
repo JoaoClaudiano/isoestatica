@@ -37,99 +37,80 @@ class IsostaticaApp {
         this.showWelcomeScreen();
     }
     
-    setupEventListeners() {
-        // Navegação
-        document.getElementById('back-to-menu').addEventListener('click', () => {
-            this.showWelcomeScreen();
+setupEventListeners() {
+    // Navegação
+    document.getElementById('back-to-menu').addEventListener('click', () => {
+        this.showWelcomeScreen();
+    });
+    
+    // Seleção de estrutura
+    document.querySelectorAll('.structure-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.classList.contains('btn-select')) {
+                const type = card.dataset.type;
+                this.loadStructureModule(type);
+                this.hideWelcomeScreen();
+            }
         });
-        
-        // Seleção de estrutura
-        document.querySelectorAll('.structure-card').forEach(card => {
-            card.addEventListener('click', (e) => {
-                if (e.target.classList.contains('btn-select')) {
-                    const type = card.dataset.type;
-                    this.loadStructureModule(type);
-                    this.hideWelcomeScreen();
-                }
-            });
-        });
-        
-        // Exemplos
-        document.getElementById('example-select').addEventListener('change', (e) => {
+    });
+    
+    // Exemplos
+    const exampleSelect = document.getElementById('example-select');
+    if (exampleSelect) {
+        exampleSelect.addEventListener('change', (e) => {
             if (e.target.value) {
                 this.loadExample(e.target.value);
                 this.hideWelcomeScreen();
             }
         });
-        
-        // Pular tutorial
-        document.getElementById('skip-tutorial').addEventListener('click', () => {
+    }
+    
+    // Pular tutorial
+    const skipTutorial = document.getElementById('skip-tutorial');
+    if (skipTutorial) {
+        skipTutorial.addEventListener('click', () => {
             this.hideWelcomeScreen();
         });
-        
-        // Ferramentas
-        document.querySelectorAll('.tool-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                this.setTool(btn.dataset.tool);
-            });
-        });
-        
-        // Vínculos
-        document.querySelectorAll('.support-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                this.ui.setSupportType(btn.dataset.support);
-            });
-        });
-        
-        // Cargas
-        document.querySelectorAll('.load-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                this.ui.setLoadType(btn.dataset.load);
-            });
-        });
-        
-        // Calcular
-        document.getElementById('btn-calculate').addEventListener('click', () => {
+    }
+    
+    // Calcular
+    const calculateBtn = document.getElementById('btn-calculate');
+    if (calculateBtn) {
+        calculateBtn.addEventListener('click', () => {
             this.calculateStructure();
         });
-        
-        // Reiniciar
-        document.getElementById('btn-reset').addEventListener('click', () => {
+    }
+    
+    // Reiniciar
+    const resetBtn = document.getElementById('btn-reset');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
             this.resetStructure();
         });
-        
-        // Controles do canvas (já gerenciados pelo CanvasHandler)
-        
-        // Toggles de diagramas
-        document.getElementById('toggle-N').addEventListener('change', (e) => {
-            this.renderer.toggleDiagram('N', e.target.checked);
-        });
-        
-        document.getElementById('toggle-V').addEventListener('change', (e) => {
-            this.renderer.toggleDiagram('V', e.target.checked);
-        });
-        
-        document.getElementById('toggle-M').addEventListener('change', (e) => {
-            this.renderer.toggleDiagram('M', e.target.checked);
-        });
-        
-        document.getElementById('toggle-T').addEventListener('change', (e) => {
-            this.renderer.toggleDiagram('T', e.target.checked);
-        });
-        
-        document.getElementById('toggle-deformed').addEventListener('change', (e) => {
-            this.renderer.toggleDeformedShape(e.target.checked);
-        });
-        
-        // Abas do painel direito
-        document.querySelectorAll('.tab-btn').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                this.switchTab(tab.dataset.tab);
-            });
-        });
-        
-        // Atualizar coordenadas (já gerenciado pelo CanvasHandler)
     }
+    
+    // Toggles de diagramas
+    const toggleN = document.getElementById('toggle-N');
+    const toggleV = document.getElementById('toggle-V');
+    const toggleM = document.getElementById('toggle-M');
+    const toggleT = document.getElementById('toggle-T');
+    const toggleDeformed = document.getElementById('toggle-deformed');
+    
+    if (toggleN) toggleN.addEventListener('change', (e) => this.renderer.toggleDiagram('N', e.target.checked));
+    if (toggleV) toggleV.addEventListener('change', (e) => this.renderer.toggleDiagram('V', e.target.checked));
+    if (toggleM) toggleM.addEventListener('change', (e) => this.renderer.toggleDiagram('M', e.target.checked));
+    if (toggleT) toggleT.addEventListener('change', (e) => this.renderer.toggleDiagram('T', e.target.checked));
+    if (toggleDeformed) toggleDeformed.addEventListener('change', (e) => this.renderer.toggleDeformedShape(e.target.checked));
+    
+    // Abas do painel direito
+    document.querySelectorAll('.tab-btn').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            this.switchTab(tab.dataset.tab);
+        });
+    });
+    
+    // NOTA: Os eventos de ferramentas, vínculos e cargas são gerenciados pelo UIControls
+}
     
     showWelcomeScreen() {
         document.getElementById('welcome-screen').classList.remove('hidden');
