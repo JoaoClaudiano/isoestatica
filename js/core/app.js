@@ -321,11 +321,18 @@ init() {
     }
     
     addNode(x, y) {
+        if (!this.currentStructure) return;
+        
         const node = this.currentStructure.addNode(x, y);
         this.updateStructureInfo();
         this.updateStatusMessage(`Nó adicionado em (${x.toFixed(2)}, ${y.toFixed(2)})`);
+        
+        // Renderizar novamente
+        this.renderer.render();
+        
+        return node;
     }
-    
+        
     addBeamAt(x, y) {
         // Encontrar nó mais próximo
         const node = this.findNearestNode(x, y, 0.5); // 0.5m de tolerância
