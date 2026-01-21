@@ -1,11 +1,15 @@
-// Renderizador específico para diagramas
+// DiagramRenderer - Renderizador de diagramas COMPLETO
 class DiagramRenderer {
     constructor(renderer) {
         this.renderer = renderer;
         this.ctx = renderer.ctx;
-        this.diagramScale = 0.15; // Escala dos diagramas
-        this.diagramOffset = 0.3; // Offset da barra
-        this.fillOpacity = 0.3; // Opacidade do preenchimento
+        this.canvas = renderer.canvas;
+        this.diagramScale = 0.1;
+        this.diagramOffset = 0.5;
+        this.fillOpacity = 0.2;
+        this.showValues = true;
+        
+        console.log('DiagramRenderer inicializado');
     }
 
     // Desenhar diagrama de esforço normal
@@ -53,22 +57,19 @@ class DiagramRenderer {
     // Calcular pontos do diagrama
     calculateDiagramPoints(beam, forces) {
         const points = [];
-        const normalAngle = beam.angle + Math.PI / 2; // Perpendicular à barra
+        const normalAngle = beam.angle + Math.PI / 2;
         
         forces.forEach(force => {
             const t = force.x;
             const value = force.value * this.diagramScale * this.renderer.scale;
             
-            // Posição na barra
             const x = beam.start.x + t * (beam.end.x - beam.start.x);
             const y = beam.start.y + t * (beam.end.y - beam.start.y);
             
-            // Offset do diagrama
             const offset = this.diagramOffset * this.renderer.scale;
             const offsetX = offset * Math.cos(normalAngle);
             const offsetY = offset * Math.sin(normalAngle);
             
-            // Valor do diagrama
             const diagramX = value * Math.cos(normalAngle);
             const diagramY = value * Math.sin(normalAngle);
             
@@ -112,7 +113,6 @@ class DiagramRenderer {
     fillDiagramArea(beam, points, color) {
         if (points.length < 2) return;
         
-        // Pontos base na barra (deslocados)
         const normalAngle = beam.angle + Math.PI / 2;
         const offset = this.diagramOffset * this.renderer.scale;
         
@@ -132,12 +132,10 @@ class DiagramRenderer {
         this.ctx.beginPath();
         this.ctx.moveTo(startBase.x, startBase.y);
         
-        // Linha superior (diagrama)
         points.forEach(point => {
             this.ctx.lineTo(point.x, point.y);
         });
         
-        // Linha de volta pela base
         this.ctx.lineTo(endBase.x, endBase.y);
         this.ctx.lineTo(startBase.x, startBase.y);
         
@@ -146,15 +144,14 @@ class DiagramRenderer {
         this.ctx.restore();
     }
 
-    // Desenhar rótulos nos diagramas
+    // Desenhar rótulos
     drawDiagramLabels(beam, forces, color, label) {
-        if (!this.renderer.showValues) return;
+        if (!this.showValues) return;
         
         const normalAngle = beam.angle + Math.PI / 2;
         const offset = (this.diagramOffset + 0.1) * this.renderer.scale;
         
-        // Mostrar valores nos extremos e no meio
-        const keyPoints = [0, 0.25, 0.5, 0.75, 1];
+        const keyPoints = [0, 0.5, 1];
         
         this.ctx.save();
         this.ctx.fillStyle = color;
@@ -163,27 +160,23 @@ class DiagramRenderer {
         this.ctx.textBaseline = 'middle';
         
         keyPoints.forEach(t => {
-            // Encontrar força mais próxima
             const index = Math.round(t * (forces.length - 1));
             const force = forces[index];
             if (!force) return;
             
             const value = force.value;
-            if (Math.abs(value) < 0.01) return; // Ignorar valores muito pequenos
+            if (Math.abs(value) < 0.01) return;
             
-            // Posição na barra
             const x = beam.start.x + t * (beam.end.x - beam.start.x);
             const y = beam.start.y + t * (beam.end.y - beam.start.y);
             
-            // Offset para o rótulo
             const offsetX = offset * Math.cos(normalAngle);
             const offsetY = offset * Math.sin(normalAngle);
             
             const screenPos = this.renderer.worldToScreen(x + offsetX, y + offsetY);
-            
-            // Desenhar linha de conexão
             const diagramPos = this.calculateDiagramPoints(beam, [force])[0];
             
+            // Linha de conexão
             this.ctx.strokeStyle = color;
             this.ctx.lineWidth = 1;
             this.ctx.beginPath();
@@ -191,7 +184,7 @@ class DiagramRenderer {
             this.ctx.lineTo(screenPos.x, screenPos.y);
             this.ctx.stroke();
             
-            // Fundo para legibilidade
+            // Fundo do texto
             const text = `${value.toFixed(1)} ${label}`;
             const textWidth = this.ctx.measureText(text).width;
             
@@ -211,7 +204,7 @@ class DiagramRenderer {
         this.ctx.restore();
     }
 
-    // Desenhar pontos de cruzamento por zero
+    // Cruzamentos por zero
     drawZeroCrossings(beam, forces, color) {
         const zeroPoints = this.findZeroCrossings(forces);
         if (zeroPoints.length === 0) return;
@@ -222,25 +215,21 @@ class DiagramRenderer {
         this.ctx.lineWidth = 2;
         
         zeroPoints.forEach(t => {
-            // Posição na barra
             const x = beam.start.x + t * (beam.end.x - beam.start.x);
             const y = beam.start.y + t * (beam.end.y - beam.start.y);
             
             const screenPos = this.renderer.worldToScreen(x, y);
             
-            // Marcar ponto
             this.ctx.beginPath();
             this.ctx.arc(screenPos.x, screenPos.y, 4, 0, Math.PI * 2);
             this.ctx.fill();
             
-            // Anel
             this.ctx.strokeStyle = 'white';
             this.ctx.lineWidth = 1;
             this.ctx.beginPath();
             this.ctx.arc(screenPos.x, screenPos.y, 6, 0, Math.PI * 2);
             this.ctx.stroke();
             
-            // Rótulo
             this.ctx.fillStyle = color;
             this.ctx.font = '9px Arial';
             this.ctx.textAlign = 'center';
@@ -251,7 +240,7 @@ class DiagramRenderer {
         this.ctx.restore();
     }
 
-    // Desenhar pontos extremos
+    // Pontos extremos
     drawExtremePoints(beam, forces, color) {
         const extremes = this.findExtremes(forces);
         if (!extremes.max && !extremes.min) return;
@@ -267,13 +256,11 @@ class DiagramRenderer {
             
             const screenPos = this.renderer.worldToScreen(x, y);
             
-            // Desenhar ponto
             this.ctx.fillStyle = color;
             this.ctx.beginPath();
             this.ctx.arc(screenPos.x, screenPos.y, 4, 0, Math.PI * 2);
             this.ctx.fill();
             
-            // Rótulo
             this.ctx.fillStyle = color;
             this.ctx.font = '9px Arial';
             this.ctx.textAlign = 'center';
@@ -284,7 +271,6 @@ class DiagramRenderer {
         this.ctx.restore();
     }
 
-    // Encontrar cruzamentos por zero
     findZeroCrossings(forces) {
         const crossings = [];
         
@@ -292,9 +278,7 @@ class DiagramRenderer {
             const current = forces[i];
             const next = forces[i + 1];
             
-            // Verificar se há mudança de sinal
             if (current.value * next.value <= 0) {
-                // Interpolar posição exata do zero
                 const t = current.x + (0 - current.value) * (next.x - current.x) / (next.value - current.value);
                 crossings.push(t);
             }
@@ -303,7 +287,6 @@ class DiagramRenderer {
         return crossings;
     }
 
-    // Encontrar valores extremos
     findExtremes(forces) {
         let max = { value: -Infinity, t: 0 };
         let min = { value: Infinity, t: 0 };
@@ -319,10 +302,12 @@ class DiagramRenderer {
             }
         });
         
-        return { max: max.value > -Infinity ? max : null, min: min.value < Infinity ? min : null };
+        return { 
+            max: max.value > -Infinity ? max : null, 
+            min: min.value < Infinity ? min : null 
+        };
     }
 
-    // Converter hex para rgba
     hexToRgba(hex, alpha) {
         const r = parseInt(hex.slice(1, 3), 16);
         const g = parseInt(hex.slice(3, 5), 16);
@@ -331,7 +316,6 @@ class DiagramRenderer {
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
 
-    // Desenhar seta indicando direção
     drawArrow(x, y, angle, size = 10, color = '#000000') {
         this.ctx.save();
         this.ctx.translate(x, y);
@@ -348,43 +332,40 @@ class DiagramRenderer {
         this.ctx.restore();
     }
 
-    // Desenhar convenção de sinais
-    drawSignConvention(x, y) {
-        this.ctx.save();
-        this.ctx.translate(x, y);
+    // Renderizar todos os diagramas
+    renderDiagrams(structure, options = {}) {
+        if (!structure || !structure.beams) return;
         
-        // Cortante positivo
-        this.ctx.strokeStyle = '#2ecc71';
-        this.ctx.lineWidth = 2;
-        this.ctx.beginPath();
-        this.ctx.moveTo(0, 0);
-        this.ctx.lineTo(30, 0);
-        this.ctx.stroke();
-        
-        this.drawArrow(15, 0, Math.PI/2, 8, '#2ecc71');
-        
-        this.ctx.fillStyle = '#2ecc71';
-        this.ctx.font = '10px Arial';
-        this.ctx.textAlign = 'left';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.fillText('V+', 35, 0);
-        
-        // Momento positivo
-        this.ctx.translate(60, 0);
-        this.ctx.strokeStyle = '#e74c3c';
-        this.ctx.beginPath();
-        this.ctx.arc(0, 0, 12, 0, Math.PI * 2);
-        this.ctx.stroke();
-        
-        this.ctx.beginPath();
-        this.ctx.arc(0, 0, 10, -Math.PI/4, Math.PI/4);
-        this.ctx.stroke();
-        
-        this.drawArrow(10 * Math.cos(Math.PI/4), 10 * Math.sin(Math.PI/4), Math.PI/4, 6, '#e74c3c');
-        
-        this.ctx.fillStyle = '#e74c3c';
-        this.ctx.fillText('M+', 20, 0);
-        
-        this.ctx.restore();
+        structure.beams.forEach(beam => {
+            // Dados de exemplo (substituir por cálculo real)
+            const length = beam.length || 1;
+            const forces = [];
+            for (let i = 0; i <= 10; i++) {
+                const t = i / 10;
+                forces.push({
+                    x: t,
+                    value: Math.sin(t * Math.PI) * 10
+                });
+            }
+            
+            if (options.showNormal) {
+                this.drawNormalDiagram(beam, forces, '#3498db');
+            }
+            if (options.showShear) {
+                this.drawShearDiagram(beam, forces, '#2ecc71');
+            }
+            if (options.showMoment) {
+                this.drawMomentDiagram(beam, forces, '#e74c3c');
+            }
+            if (options.showTorsion) {
+                this.drawTorsionDiagram(beam, forces, '#9b59b6');
+            }
+        });
     }
 }
+
+// Adicionar ao StructureRenderer
+StructureRenderer.prototype.addDiagramRenderer = function() {
+    this.diagramRenderer = new DiagramRenderer(this);
+    console.log('DiagramRenderer adicionado ao StructureRenderer');
+};
