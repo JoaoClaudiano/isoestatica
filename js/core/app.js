@@ -8,6 +8,9 @@ class IsostaticaApp {
         this.isCalculated = false;
         this.renderer = null;
         this.calculator = null;
+        this.ui = new UIControls(this);
+        this.diagramManager = new DiagramManager(this.renderer, this);
+        this.tutorialSystem = new TutorialSystem(this);
         
         this.init();
     }
