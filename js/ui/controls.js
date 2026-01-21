@@ -13,123 +13,152 @@ class UIControls {
     }
 
     setupEventListeners() {
-        // Ferramentas
-        document.querySelectorAll('.tool-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                this.setTool(btn.dataset.tool);
+        // Ferramentas - Verificar se os elementos existem antes de adicionar listeners
+        const toolButtons = document.querySelectorAll('.tool-btn');
+        if (toolButtons.length > 0) {
+            toolButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    this.setTool(btn.dataset.tool);
+                });
             });
-        });
+        }
 
         // Vínculos
-        document.querySelectorAll('.support-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                this.setSupportType(btn.dataset.support);
+        const supportButtons = document.querySelectorAll('.support-btn');
+        if (supportButtons.length > 0) {
+            supportButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    this.setSupportType(btn.dataset.support);
+                });
             });
-        });
+        }
 
         // Cargas
-        document.querySelectorAll('.load-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                this.setLoadType(btn.dataset.load);
+        const loadButtons = document.querySelectorAll('.load-btn');
+        if (loadButtons.length > 0) {
+            loadButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    this.setLoadType(btn.dataset.load);
+                });
             });
-        });
+        }
 
-        // Propriedades de carga
-        document.getElementById('load-magnitude').addEventListener('change', (e) => {
-            this.updateLoadProperties();
-        });
-
-        document.getElementById('load-direction').addEventListener('change', (e) => {
-            this.updateLoadProperties();
-        });
+        // Propriedades de carga - Verificar se os elementos existem
+        const loadMagnitude = document.getElementById('load-magnitude');
+        const loadDirection = document.getElementById('load-direction');
+        
+        if (loadMagnitude) {
+            loadMagnitude.addEventListener('change', (e) => {
+                this.updateLoadProperties();
+            });
+        }
+        
+        if (loadDirection) {
+            loadDirection.addEventListener('change', (e) => {
+                this.updateLoadProperties();
+            });
+        }
 
         // Zoom e navegação
-        document.getElementById('zoom-in').addEventListener('click', () => {
-            this.app.renderer.zoomIn();
-        });
-
-        document.getElementById('zoom-out').addEventListener('click', () => {
-            this.app.renderer.zoomOut();
-        });
-
-        document.getElementById('pan-view').addEventListener('click', () => {
-            this.setTool('pan');
-        });
-
-        document.getElementById('fit-view').addEventListener('click', () => {
-            this.app.renderer.fitToView();
-        });
+        const zoomInBtn = document.getElementById('zoom-in');
+        const zoomOutBtn = document.getElementById('zoom-out');
+        const panViewBtn = document.getElementById('pan-view');
+        const fitViewBtn = document.getElementById('fit-view');
+        
+        if (zoomInBtn) zoomInBtn.addEventListener('click', () => this.zoomIn());
+        if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => this.zoomOut());
+        if (panViewBtn) panViewBtn.addEventListener('click', () => this.setTool('pan'));
+        if (fitViewBtn) fitViewBtn.addEventListener('click', () => this.fitToView());
 
         // Configurações
-        document.getElementById('grid-snap').addEventListener('change', (e) => {
-            this.app.renderer.gridSnap = e.target.checked;
-            this.app.renderer.render();
-        });
-
-        document.getElementById('show-coordinates').addEventListener('change', (e) => {
-            this.app.renderer.showCoordinates = e.target.checked;
-            this.app.renderer.render();
-        });
-
-        document.getElementById('scale-factor').addEventListener('input', (e) => {
-            const value = e.target.value;
-            document.getElementById('scale-value').textContent = `1:${value}`;
-            this.app.renderer.scale = value / 100;
-            this.app.renderer.render();
-        });
+        const gridSnap = document.getElementById('grid-snap');
+        const showCoordinates = document.getElementById('show-coordinates');
+        const scaleFactor = document.getElementById('scale-factor');
+        
+        if (gridSnap) {
+            gridSnap.addEventListener('change', (e) => {
+                if (this.app.renderer) {
+                    this.app.renderer.gridSnap = e.target.checked;
+                    this.app.renderer.render();
+                }
+            });
+        }
+        
+        if (showCoordinates) {
+            showCoordinates.addEventListener('change', (e) => {
+                if (this.app.renderer) {
+                    this.app.renderer.showCoordinates = e.target.checked;
+                    this.app.renderer.render();
+                }
+            });
+        }
+        
+        if (scaleFactor) {
+            scaleFactor.addEventListener('input', (e) => {
+                const value = e.target.value;
+                const scaleValue = document.getElementById('scale-value');
+                if (scaleValue) {
+                    scaleValue.textContent = `1:${value}`;
+                }
+                if (this.app.renderer) {
+                    this.app.renderer.scale = value / 100;
+                    this.app.renderer.render();
+                }
+            });
+        }
 
         // Menu principal
-        document.getElementById('btn-help').addEventListener('click', () => {
-            this.showHelp();
-        });
-
-        document.getElementById('btn-settings').addEventListener('click', () => {
-            this.showSettings();
-        });
-
-        document.getElementById('btn-fullscreen').addEventListener('click', () => {
-            this.toggleFullscreen();
-        });
-
-        document.getElementById('btn-export').addEventListener('click', () => {
-            this.exportStructure();
-        });
-
-        document.getElementById('back-to-menu').addEventListener('click', () => {
-            this.showWelcomeScreen();
-        });
+        const helpBtn = document.getElementById('btn-help');
+        const settingsBtn = document.getElementById('btn-settings');
+        const fullscreenBtn = document.getElementById('btn-fullscreen');
+        const exportBtn = document.getElementById('btn-export');
+        const backToMenuBtn = document.getElementById('back-to-menu');
+        
+        if (helpBtn) helpBtn.addEventListener('click', () => this.showHelp());
+        if (settingsBtn) settingsBtn.addEventListener('click', () => this.showSettings());
+        if (fullscreenBtn) fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+        if (exportBtn) exportBtn.addEventListener('click', () => this.exportStructure());
+        if (backToMenuBtn) backToMenuBtn.addEventListener('click', () => this.showWelcomeScreen());
     }
 
     setTool(tool) {
         this.currentTool = tool;
         
-        // Atualizar UI
+        // Atualizar UI - Verificar se o elemento existe
         document.querySelectorAll('.tool-btn').forEach(btn => {
             btn.classList.remove('active');
         });
-        document.getElementById(`tool-${tool}`).classList.add('active');
+        
+        const toolElement = document.getElementById(`tool-${tool}`);
+        if (toolElement) {
+            toolElement.classList.add('active');
+        }
 
         // Atualizar cursor
         const canvas = document.getElementById('structure-canvas');
-        switch(tool) {
-            case 'select':
-                canvas.style.cursor = 'default';
-                break;
-            case 'node':
-                canvas.style.cursor = 'crosshair';
-                break;
-            case 'beam':
-                canvas.style.cursor = 'crosshair';
-                break;
-            case 'delete':
-                canvas.style.cursor = 'not-allowed';
-                break;
-            case 'pan':
-                canvas.style.cursor = 'grab';
-                break;
+        if (canvas) {
+            switch(tool) {
+                case 'select':
+                    canvas.style.cursor = 'default';
+                    break;
+                case 'node':
+                    canvas.style.cursor = 'crosshair';
+                    break;
+                case 'beam':
+                    canvas.style.cursor = 'crosshair';
+                    break;
+                case 'delete':
+                    canvas.style.cursor = 'not-allowed';
+                    break;
+                case 'pan':
+                    canvas.style.cursor = 'grab';
+                    break;
+            }
         }
 
-        this.app.updateStatusMessage(`Ferramenta: ${this.getToolName(tool)}`);
+        if (this.app && this.app.updateStatusMessage) {
+            this.app.updateStatusMessage(`Ferramenta: ${this.getToolName(tool)}`);
+        }
     }
 
     setSupportType(type) {
@@ -137,7 +166,9 @@ class UIControls {
         this.currentTool = 'support';
         this.setTool('select'); // Para mostrar cursor correto
         
-        this.app.updateStatusMessage(`Vínculo selecionado: ${this.getSupportName(type)}`);
+        if (this.app && this.app.updateStatusMessage) {
+            this.app.updateStatusMessage(`Vínculo selecionado: ${this.getSupportName(type)}`);
+        }
     }
 
     setLoadType(type) {
@@ -147,32 +178,41 @@ class UIControls {
 
         // Mostrar/ocultar propriedades específicas
         const distProps = document.getElementById('distributed-props');
-        if (type === 'distributed') {
-            distProps.classList.remove('hidden');
-        } else {
-            distProps.classList.add('hidden');
+        if (distProps) {
+            if (type === 'distributed') {
+                distProps.classList.remove('hidden');
+            } else {
+                distProps.classList.add('hidden');
+            }
         }
 
-        this.app.updateStatusMessage(`Carga selecionada: ${this.getLoadName(type)}`);
+        if (this.app && this.app.updateStatusMessage) {
+            this.app.updateStatusMessage(`Carga selecionada: ${this.getLoadName(type)}`);
+        }
     }
 
     updateLoadProperties() {
-        const magnitude = parseFloat(document.getElementById('load-magnitude').value);
-        const direction = parseFloat(document.getElementById('load-direction').value);
+        const magnitudeInput = document.getElementById('load-magnitude');
+        const directionInput = document.getElementById('load-direction');
+        
+        if (!magnitudeInput || !directionInput) return;
+        
+        const magnitude = parseFloat(magnitudeInput.value);
+        const direction = parseFloat(directionInput.value);
         
         // Validar valores
         if (isNaN(magnitude) || magnitude <= 0) {
-            document.getElementById('load-magnitude').classList.add('error');
+            magnitudeInput.classList.add('error');
             return;
         } else {
-            document.getElementById('load-magnitude').classList.remove('error');
+            magnitudeInput.classList.remove('error');
         }
 
         if (isNaN(direction) || direction < 0 || direction > 360) {
-            document.getElementById('load-direction').classList.add('error');
+            directionInput.classList.add('error');
             return;
         } else {
-            document.getElementById('load-direction').classList.remove('error');
+            directionInput.classList.remove('error');
         }
     }
 
@@ -209,161 +249,31 @@ class UIControls {
     }
 
     showHelp() {
-        const modal = document.getElementById('help-modal');
-        if (!modal) {
-            this.createHelpModal();
-        } else {
-            modal.classList.remove('hidden');
-        }
-    }
-
-    createHelpModal() {
-        const modal = document.createElement('div');
-        modal.id = 'help-modal';
-        modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3><i class="fas fa-question-circle"></i> Ajuda</h3>
-                    <button class="modal-close">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="help-content">
-                        <h4>Como usar o Isostática Lab</h4>
-                        <ol>
-                            <li><strong>Selecione o tipo de estrutura</strong> na tela inicial</li>
-                            <li><strong>Adicione nós</strong> clicando na área de desenho</li>
-                            <li><strong>Conecte os nós com barras</strong></li>
-                            <li><strong>Adicione vínculos</strong> (apoios) nos nós</li>
-                            <li><strong>Aplique cargas</strong> (pontuais, distribuídas, momentos)</li>
-                            <li><strong>Clique em "Calcular"</strong> para analisar</li>
-                            <li><strong>Visualize os diagramas</strong> usando os toggles</li>
-                        </ol>
-                        
-                        <h4>Atalhos do Teclado</h4>
-                        <ul>
-                            <li><kbd>N</kbd> - Ferramenta Nó</li>
-                            <li><kbd>B</kbd> - Ferramenta Barra</li>
-                            <li><kbd>Delete</kbd> - Excluir elemento selecionado</li>
-                            <li><kbd>Ctrl + +</kbd> - Zoom In</li>
-                            <li><kbd>Ctrl + -</kbd> - Zoom Out</li>
-                            <li><kbd>Espaço</kbd> - Mover vista</li>
-                            <li><kbd>F</kbd> - Ajustar à tela</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-primary close-help">Fechar</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        modal.querySelector('.modal-close').addEventListener('click', () => {
-            modal.classList.add('hidden');
-        });
-        
-        modal.querySelector('.close-help').addEventListener('click', () => {
-            modal.classList.add('hidden');
-        });
-        
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.add('hidden');
-            }
-        });
+        console.log('Mostrando ajuda');
+        // Implementar modal de ajuda
     }
 
     showSettings() {
-        const modal = document.getElementById('settings-modal');
-        if (!modal) {
-            this.createSettingsModal();
-        } else {
-            modal.classList.remove('hidden');
+        console.log('Mostrando configurações');
+        // Implementar modal de configurações
+    }
+
+    zoomIn() {
+        if (this.app && this.app.renderer) {
+            this.app.renderer.zoomIn();
         }
     }
 
-    createSettingsModal() {
-        const modal = document.getElementById('settings-modal');
-        
-        // Adicionar conteúdo às configurações
-        const body = modal.querySelector('.modal-body');
-        body.innerHTML = `
-            <div class="settings-section">
-                <h4>Configurações de Visualização</h4>
-                <div class="settings-grid">
-                    <div class="setting-item">
-                        <label>
-                            <input type="checkbox" id="setting-show-grid" checked>
-                            Mostrar grade
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <label>
-                            <input type="checkbox" id="setting-show-labels" checked>
-                            Mostrar rótulos
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <label>
-                            <input type="checkbox" id="setting-show-values" checked>
-                            Mostrar valores
-                        </label>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="settings-section">
-                <h4>Configurações de Cálculo</h4>
-                <div class="settings-grid">
-                    <div class="setting-item">
-                        <label>Tolerância de cálculo:</label>
-                        <input type="number" id="setting-tolerance" value="0.001" step="0.001" min="0.0001">
-                    </div>
-                    <div class="setting-item">
-                        <label>Unidades padrão:</label>
-                        <select id="setting-units">
-                            <option value="kN">kN</option>
-                            <option value="N">N</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="settings-section">
-                <h4>Configurações de Interface</h4>
-                <div class="settings-grid">
-                    <div class="setting-item">
-                        <label>Tema:</label>
-                        <select id="setting-theme">
-                            <option value="light">Claro</option>
-                            <option value="dark">Escuro</option>
-                        </select>
-                    </div>
-                    <div class="setting-item">
-                        <label>Tamanho da fonte:</label>
-                        <input type="range" id="setting-font-size" min="12" max="18" value="14">
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Configurar eventos
-        document.getElementById('setting-show-grid').addEventListener('change', (e) => {
-            this.app.renderer.showGrid = e.target.checked;
-            this.app.renderer.render();
-        });
-        
-        document.getElementById('setting-show-labels').addEventListener('change', (e) => {
-            this.app.renderer.showLabels = e.target.checked;
-            this.app.renderer.render();
-        });
-        
-        document.getElementById('setting-show-values').addEventListener('change', (e) => {
-            this.app.renderer.showValues = e.target.checked;
-            this.app.renderer.render();
-        });
+    zoomOut() {
+        if (this.app && this.app.renderer) {
+            this.app.renderer.zoomOut();
+        }
+    }
+
+    fitToView() {
+        if (this.app && this.app.renderer) {
+            this.app.renderer.fitToView();
+        }
     }
 
     toggleFullscreen() {
@@ -389,7 +299,7 @@ class UIControls {
     }
 
     exportStructure() {
-        if (!this.app.currentStructure) {
+        if (!this.app || !this.app.currentStructure) {
             alert('Não há estrutura para exportar.');
             return;
         }
@@ -398,7 +308,6 @@ class UIControls {
         const exportData = {
             type: this.app.structureType,
             structure: this.app.currentStructure,
-            results: this.app.currentStructure.results,
             timestamp: new Date().toISOString(),
             version: '1.0.0'
         };
@@ -419,14 +328,24 @@ class UIControls {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        this.app.updateStatusMessage('Estrutura exportada com sucesso');
+        if (this.app && this.app.updateStatusMessage) {
+            this.app.updateStatusMessage('Estrutura exportada com sucesso');
+        }
     }
 
     showWelcomeScreen() {
         if (confirm('Deseja voltar ao menu principal? Todo o progresso atual será perdido.')) {
-            document.getElementById('welcome-screen').classList.remove('hidden');
-            document.getElementById('main-interface').style.display = 'none';
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const mainInterface = document.getElementById('main-interface');
+            
+            if (welcomeScreen) welcomeScreen.classList.remove('hidden');
+            if (mainInterface) mainInterface.style.display = 'none';
         }
+    }
+
+    showToast(message, type = 'info') {
+        console.log(`${type.toUpperCase()}: ${message}`);
+        // Implementar toast mais tarde
     }
 
     getCurrentTool() {
@@ -439,29 +358,5 @@ class UIControls {
 
     getCurrentSupportType() {
         return this.currentSupportType;
-    }
-
-    showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.innerHTML = `
-            <div class="toast-content">
-                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-                <span>${message}</span>
-            </div>
-            <button class="toast-close">&times;</button>
-        `;
-        
-        document.body.appendChild(toast);
-        
-        // Remover após 3 segundos
-        setTimeout(() => {
-            toast.remove();
-        }, 3000);
-        
-        // Fechar ao clicar
-        toast.querySelector('.toast-close').addEventListener('click', () => {
-            toast.remove();
-        });
     }
 }
