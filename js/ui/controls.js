@@ -1,18 +1,49 @@
 // Controles da interface do usuário
-
 class UIControls {
     constructor(app) {
         this.app = app;
+        this.currentTool = 'select';
+        this.currentLoadType = 'point';
+        this.currentSupportType = 'pinned';
         this.init();
     }
 
     init() {
-        this.setupControlListeners();
-        this.updateUI();
+        this.setupEventListeners();
     }
 
-    setupControlListeners() {
-        // Controle de zoom
+    setupEventListeners() {
+        // Ferramentas
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.setTool(btn.dataset.tool);
+            });
+        });
+
+        // Vínculos
+        document.querySelectorAll('.support-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.setSupportType(btn.dataset.support);
+            });
+        });
+
+        // Cargas
+        document.querySelectorAll('.load-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.setLoadType(btn.dataset.load);
+            });
+        });
+
+        // Propriedades de carga
+        document.getElementById('load-magnitude').addEventListener('change', (e) => {
+            this.updateLoadProperties();
+        });
+
+        document.getElementById('load-direction').addEventListener('change', (e) => {
+            this.updateLoadProperties();
+        });
+
+        // Zoom e navegação
         document.getElementById('zoom-in').addEventListener('click', () => {
             this.app.renderer.zoomIn();
         });
@@ -21,158 +52,338 @@ class UIControls {
             this.app.renderer.zoomOut();
         });
 
+        document.getElementById('pan-view').addEventListener('click', () => {
+            this.setTool('pan');
+        });
+
         document.getElementById('fit-view').addEventListener('click', () => {
             this.app.renderer.fitToView();
         });
 
-        // Controle de snap to grid
-        const gridSnap = document.getElementById('grid-snap');
-        gridSnap.addEventListener('change', (e) => {
-            this.app.gridSnapEnabled = e.target.checked;
+        // Configurações
+        document.getElementById('grid-snap').addEventListener('change', (e) => {
+            this.app.renderer.gridSnap = e.target.checked;
+            this.app.renderer.render();
         });
 
-        // Mostrar coordenadas
-        const showCoords = document.getElementById('show-coordinates');
-        showCoords.addEventListener('change', (e) => {
-            const display = document.getElementById('coordinate-display');
-            if (e.target.checked) {
-                display.classList.remove('hidden');
-            } else {
-                display.classList.add('hidden');
-            }
+        document.getElementById('show-coordinates').addEventListener('change', (e) => {
+            this.app.renderer.showCoordinates = e.target.checked;
+            this.app.renderer.render();
         });
 
-        // Escala
-        const scaleSlider = document.getElementById('scale-factor');
-        const scaleValue = document.getElementById('scale-value');
-        
-        scaleSlider.addEventListener('input', (e) => {
-            const value = parseInt(e.target.value);
-            scaleValue.textContent = `1:${value}`;
-            // Atualizar escala de renderização se necessário
+        document.getElementById('scale-factor').addEventListener('input', (e) => {
+            const value = e.target.value;
+            document.getElementById('scale-value').textContent = `1:${value}`;
+            this.app.renderer.scale = value / 100;
+            this.app.renderer.render();
         });
 
-        // Controle de cargas
-        const loadTypeButtons = document.querySelectorAll('.load-btn');
-        loadTypeButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const loadType = btn.dataset.load;
-                this.app.currentTool = 'load';
-                this.app.selectedLoadType = loadType;
-                
-                // Mostrar/ocultar propriedades específicas
-                const distProps = document.getElementById('distributed-props');
-                if (loadType === 'distributed') {
-                    distProps.classList.remove('hidden');
-                } else {
-                    distProps.classList.add('hidden');
-                }
-                
-                this.updateUI();
-            });
-        });
-
-        // Controle de vínculos
-        const supportButtons = document.querySelectorAll('.support-btn');
-        supportButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                this.app.currentTool = 'support';
-                this.app.selectedSupportType = btn.dataset.support;
-                this.updateUI();
-            });
-        });
-
-        // Botão de ajuda
+        // Menu principal
         document.getElementById('btn-help').addEventListener('click', () => {
             this.showHelp();
         });
 
-        // Botão de configurações
         document.getElementById('btn-settings').addEventListener('click', () => {
             this.showSettings();
         });
 
-        // Botão de tela cheia
         document.getElementById('btn-fullscreen').addEventListener('click', () => {
             this.toggleFullscreen();
         });
 
-        // Botão de exportar
         document.getElementById('btn-export').addEventListener('click', () => {
             this.exportStructure();
         });
+
+        document.getElementById('back-to-menu').addEventListener('click', () => {
+            this.showWelcomeScreen();
+        });
     }
 
-    updateUI() {
-        // Atualizar estado das ferramentas
+    setTool(tool) {
+        this.currentTool = tool;
+        
+        // Atualizar UI
         document.querySelectorAll('.tool-btn').forEach(btn => {
             btn.classList.remove('active');
         });
-        
-        const activeToolBtn = document.getElementById(`tool-${this.app.currentTool}`);
-        if (activeToolBtn) {
-            activeToolBtn.classList.add('active');
+        document.getElementById(`tool-${tool}`).classList.add('active');
+
+        // Atualizar cursor
+        const canvas = document.getElementById('structure-canvas');
+        switch(tool) {
+            case 'select':
+                canvas.style.cursor = 'default';
+                break;
+            case 'node':
+                canvas.style.cursor = 'crosshair';
+                break;
+            case 'beam':
+                canvas.style.cursor = 'crosshair';
+                break;
+            case 'delete':
+                canvas.style.cursor = 'not-allowed';
+                break;
+            case 'pan':
+                canvas.style.cursor = 'grab';
+                break;
         }
 
-        // Atualizar status da estrutura
-        this.updateStructureStatus();
+        this.app.updateStatusMessage(`Ferramenta: ${this.getToolName(tool)}`);
     }
 
-    updateStructureStatus() {
-        if (!this.app.currentStructure) return;
+    setSupportType(type) {
+        this.currentSupportType = type;
+        this.currentTool = 'support';
+        this.setTool('select'); // Para mostrar cursor correto
         
-        const nodeCount = this.app.currentStructure.nodes.length;
-        const beamCount = this.app.currentStructure.beams.length;
-        
-        document.getElementById('node-count').textContent = nodeCount;
-        document.getElementById('bar-count').textContent = beamCount;
-        
-        // Calcular grau de estaticidade
-        const degree = this.app.calculator.calculateStaticDegree(this.app.currentStructure);
-        document.getElementById('static-degree').textContent = degree;
-        
-        // Atualizar indicador
-        const indicator = document.getElementById('isostatic-indicator');
-        let status, className;
-        
-        if (degree === 0) {
-            status = 'ISOSTÁTICA';
-            className = 'isostatic';
-        } else if (degree > 0) {
-            status = 'HIPOSTÁTICA';
-            className = 'hypostatic';
+        this.app.updateStatusMessage(`Vínculo selecionado: ${this.getSupportName(type)}`);
+    }
+
+    setLoadType(type) {
+        this.currentLoadType = type;
+        this.currentTool = 'load';
+        this.setTool('select'); // Para mostrar cursor correto
+
+        // Mostrar/ocultar propriedades específicas
+        const distProps = document.getElementById('distributed-props');
+        if (type === 'distributed') {
+            distProps.classList.remove('hidden');
         } else {
-            status = 'HIPERESTÁTICA';
-            className = 'hyperstatic';
+            distProps.classList.add('hidden');
         }
+
+        this.app.updateStatusMessage(`Carga selecionada: ${this.getLoadName(type)}`);
+    }
+
+    updateLoadProperties() {
+        const magnitude = parseFloat(document.getElementById('load-magnitude').value);
+        const direction = parseFloat(document.getElementById('load-direction').value);
         
-        indicator.textContent = status;
-        indicator.className = `status-badge ${className}`;
+        // Validar valores
+        if (isNaN(magnitude) || magnitude <= 0) {
+            document.getElementById('load-magnitude').classList.add('error');
+            return;
+        } else {
+            document.getElementById('load-magnitude').classList.remove('error');
+        }
+
+        if (isNaN(direction) || direction < 0 || direction > 360) {
+            document.getElementById('load-direction').classList.add('error');
+            return;
+        } else {
+            document.getElementById('load-direction').classList.remove('error');
+        }
+    }
+
+    getToolName(tool) {
+        const names = {
+            'select': 'Selecionar',
+            'node': 'Nó',
+            'beam': 'Barra',
+            'delete': 'Excluir',
+            'pan': 'Mover Vista',
+            'support': 'Vínculo',
+            'load': 'Carga'
+        };
+        return names[tool] || tool;
+    }
+
+    getSupportName(type) {
+        const names = {
+            'roller': 'Apoio Móvel',
+            'pinned': 'Apoio Fixo',
+            'fixed': 'Engaste',
+            'hinge': 'Rótula'
+        };
+        return names[type] || type;
+    }
+
+    getLoadName(type) {
+        const names = {
+            'point': 'Pontual',
+            'distributed': 'Distribuída',
+            'moment': 'Momento'
+        };
+        return names[type] || type;
     }
 
     showHelp() {
-        alert('Isostática Lab - Ajuda\n\n' +
-              '1. Selecione uma ferramenta no painel esquerdo\n' +
-              '2. Clique na área de desenho para adicionar elementos\n' +
-              '3. Conecte nós com barras\n' +
-              '4. Adicione vínculos e cargas\n' +
-              '5. Clique em "Calcular" para analisar a estrutura\n' +
-              '6. Use as opções de visualização para mostrar diagramas\n\n' +
-              'Para mais informações, consulte a aba "Aprendizado".');
+        const modal = document.getElementById('help-modal');
+        if (!modal) {
+            this.createHelpModal();
+        } else {
+            modal.classList.remove('hidden');
+        }
+    }
+
+    createHelpModal() {
+        const modal = document.createElement('div');
+        modal.id = 'help-modal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-question-circle"></i> Ajuda</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="help-content">
+                        <h4>Como usar o Isostática Lab</h4>
+                        <ol>
+                            <li><strong>Selecione o tipo de estrutura</strong> na tela inicial</li>
+                            <li><strong>Adicione nós</strong> clicando na área de desenho</li>
+                            <li><strong>Conecte os nós com barras</strong></li>
+                            <li><strong>Adicione vínculos</strong> (apoios) nos nós</li>
+                            <li><strong>Aplique cargas</strong> (pontuais, distribuídas, momentos)</li>
+                            <li><strong>Clique em "Calcular"</strong> para analisar</li>
+                            <li><strong>Visualize os diagramas</strong> usando os toggles</li>
+                        </ol>
+                        
+                        <h4>Atalhos do Teclado</h4>
+                        <ul>
+                            <li><kbd>N</kbd> - Ferramenta Nó</li>
+                            <li><kbd>B</kbd> - Ferramenta Barra</li>
+                            <li><kbd>Delete</kbd> - Excluir elemento selecionado</li>
+                            <li><kbd>Ctrl + +</kbd> - Zoom In</li>
+                            <li><kbd>Ctrl + -</kbd> - Zoom Out</li>
+                            <li><kbd>Espaço</kbd> - Mover vista</li>
+                            <li><kbd>F</kbd> - Ajustar à tela</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary close-help">Fechar</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        modal.querySelector('.modal-close').addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+        
+        modal.querySelector('.close-help').addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
     }
 
     showSettings() {
-        alert('Configurações\n\nEm desenvolvimento...');
+        const modal = document.getElementById('settings-modal');
+        if (!modal) {
+            this.createSettingsModal();
+        } else {
+            modal.classList.remove('hidden');
+        }
+    }
+
+    createSettingsModal() {
+        const modal = document.getElementById('settings-modal');
+        
+        // Adicionar conteúdo às configurações
+        const body = modal.querySelector('.modal-body');
+        body.innerHTML = `
+            <div class="settings-section">
+                <h4>Configurações de Visualização</h4>
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="setting-show-grid" checked>
+                            Mostrar grade
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="setting-show-labels" checked>
+                            Mostrar rótulos
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="setting-show-values" checked>
+                            Mostrar valores
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h4>Configurações de Cálculo</h4>
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label>Tolerância de cálculo:</label>
+                        <input type="number" id="setting-tolerance" value="0.001" step="0.001" min="0.0001">
+                    </div>
+                    <div class="setting-item">
+                        <label>Unidades padrão:</label>
+                        <select id="setting-units">
+                            <option value="kN">kN</option>
+                            <option value="N">N</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h4>Configurações de Interface</h4>
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label>Tema:</label>
+                        <select id="setting-theme">
+                            <option value="light">Claro</option>
+                            <option value="dark">Escuro</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label>Tamanho da fonte:</label>
+                        <input type="range" id="setting-font-size" min="12" max="18" value="14">
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Configurar eventos
+        document.getElementById('setting-show-grid').addEventListener('change', (e) => {
+            this.app.renderer.showGrid = e.target.checked;
+            this.app.renderer.render();
+        });
+        
+        document.getElementById('setting-show-labels').addEventListener('change', (e) => {
+            this.app.renderer.showLabels = e.target.checked;
+            this.app.renderer.render();
+        });
+        
+        document.getElementById('setting-show-values').addEventListener('change', (e) => {
+            this.app.renderer.showValues = e.target.checked;
+            this.app.renderer.render();
+        });
     }
 
     toggleFullscreen() {
+        const elem = document.documentElement;
+        
         if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => {
-                console.log(`Erro ao entrar em tela cheia: ${err.message}`);
-            });
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) { /* Safari */
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { /* IE11 */
+                elem.msRequestFullscreen();
+            }
         } else {
             if (document.exitFullscreen) {
                 document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) { /* Safari */
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) { /* IE11 */
+                document.msExitFullscreen();
             }
         }
     }
@@ -183,37 +394,74 @@ class UIControls {
             return;
         }
 
-        const data = {
+        // Criar objeto com dados da estrutura
+        const exportData = {
             type: this.app.structureType,
-            nodes: this.app.currentStructure.nodes.map(node => ({
-                id: node.id,
-                x: node.x,
-                y: node.y,
-                support: node.support,
-                loads: node.loads,
-                moments: node.moments
-            })),
-            beams: this.app.currentStructure.beams.map(beam => ({
-                id: beam.id,
-                startId: beam.start.id,
-                endId: beam.end.id,
-                distributedLoads: beam.distributedLoads
-            })),
-            results: this.app.currentStructure.internalForces
+            structure: this.app.currentStructure,
+            results: this.app.currentStructure.results,
+            timestamp: new Date().toISOString(),
+            version: '1.0.0'
         };
 
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        // Converter para JSON
+        const json = JSON.stringify(exportData, null, 2);
+        
+        // Criar blob e link de download
+        const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `estrutura_${this.app.structureType}_${new Date().toISOString().split('T')[0]}.json`;
+        
+        // Trigger download
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        alert('Estrutura exportada com sucesso!');
+        this.app.updateStatusMessage('Estrutura exportada com sucesso');
+    }
+
+    showWelcomeScreen() {
+        if (confirm('Deseja voltar ao menu principal? Todo o progresso atual será perdido.')) {
+            document.getElementById('welcome-screen').classList.remove('hidden');
+            document.getElementById('main-interface').style.display = 'none';
+        }
+    }
+
+    getCurrentTool() {
+        return this.currentTool;
+    }
+
+    getCurrentLoadType() {
+        return this.currentLoadType;
+    }
+
+    getCurrentSupportType() {
+        return this.currentSupportType;
+    }
+
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <div class="toast-content">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            </div>
+            <button class="toast-close">&times;</button>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Remover após 3 segundos
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+        
+        // Fechar ao clicar
+        toast.querySelector('.toast-close').addEventListener('click', () => {
+            toast.remove();
+        });
     }
 }
-
-window.UIControls = UIControls;
