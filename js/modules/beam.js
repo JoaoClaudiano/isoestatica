@@ -3,7 +3,6 @@ class BeamModule {
     constructor(structure) {
         this.structure = structure;
     }
-
     // Método para verificar se a viga é isostática
     checkIsostaticity() {
         const nodes = this.structure.nodes;
