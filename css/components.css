@@ -952,7 +952,55 @@
     color: var(--text-secondary);
 }
 
+/* Melhorias para scroll e responsividade */
+.scrollable-x {
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+}
 
+.scrollable-y {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.scrollable {
+    overflow: auto;
+}
+
+/* Indicador de que há mais conteúdo para o lado */
+.scroll-hint {
+    position: relative;
+}
+
+.scroll-hint::after {
+    content: '→';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--secondary-color);
+    animation: bounce-horizontal 2s infinite;
+    font-weight: bold;
+}
+
+@keyframes bounce-horizontal {
+    0%, 100% { transform: translateY(-50%) translateX(0); }
+    50% { transform: translateY(-50%) translateX(5px); }
+}
+
+/* Para elementos que precisam de largura fixa em telas pequenas */
+.min-width-container {
+    min-width: 300px;
+}
+
+/* Para tabelas em telas pequenas */
+.table-responsive {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
 
 
 
