@@ -1,8 +1,11 @@
 // Módulo específico para análise de vigas isostáticas
+// NOTA: BeamStructure já está definida em model.js
+
 class BeamModule {
     constructor(structure) {
         this.structure = structure;
     }
+    
     // Método para verificar se a viga é isostática
     checkIsostaticity() {
         const nodes = this.structure.nodes;
@@ -80,7 +83,7 @@ class BeamModule {
         // Cargas nos nós
         nodes.forEach(node => {
             node.loads.forEach(load => {
-                const angle = Utils.degToRad(load.direction);
+                const angle = (load.direction * Math.PI) / 180;
                 const fx = load.magnitude * Math.cos(angle);
                 const fy = load.magnitude * Math.sin(angle);
                 
@@ -92,12 +95,14 @@ class BeamModule {
         
         // Cargas distribuídas nas barras
         beams.forEach(beam => {
-            beam.distributedLoads.forEach(load => {
-                const equivalent = this.calculateEquivalentLoad(beam, load);
-                sumFx += equivalent.fx;
-                sumFy += equivalent.fy;
-                sumMz += equivalent.moment;
-            });
+            if (beam.distributedLoads) {
+                beam.distributedLoads.forEach(load => {
+                    const equivalent = this.calculateEquivalentLoad(beam, load);
+                    sumFx += equivalent.fx;
+                    sumFy += equivalent.fy;
+                    sumMz += equivalent.moment;
+                });
+            }
         });
         
         // Resolver sistema de equações baseado nos tipos de apoio
@@ -251,7 +256,7 @@ class BeamModule {
         this.structure.nodes.forEach(node => {
             if (this.isPointToLeft(x, y, node.x, node.y, beam.angle)) {
                 node.loads.forEach(load => {
-                    const angle = Utils.degToRad(load.direction);
+                    const angle = (load.direction * Math.PI) / 180;
                     const fx = load.magnitude * Math.cos(angle);
                     const fy = load.magnitude * Math.sin(angle);
                     
