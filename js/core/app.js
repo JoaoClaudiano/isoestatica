@@ -142,13 +142,6 @@ init() {
             });
         });
         
-        // Eventos do canvas
-        const canvas = document.getElementById('structure-canvas');
-        canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
-        canvas.addEventListener('mousemove', (e) => this.handleCanvasMouseMove(e));
-        canvas.addEventListener('mousedown', (e) => this.handleCanvasMouseDown(e));
-        canvas.addEventListener('mouseup', (e) => this.handleCanvasMouseUp(e));
-        
         // Atualizar coordenadas
         canvas.addEventListener('mousemove', (e) => {
             const rect = canvas.getBoundingClientRect();
