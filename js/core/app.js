@@ -1,36 +1,40 @@
 // Isostática Lab - Aplicação Principal
-class IsostaticaApp {
-    constructor() {
-        this.currentStructure = null;
-        this.structureType = 'beam';
-        this.currentTool = 'select';
-        this.selectedElement = null;
-        this.isCalculated = false;
-        this.renderer = null;
-        this.calculator = null;
-        this.ui = new UIControls(this);
-        this.diagramManager = new DiagramManager(this.renderer, this);
-        this.tutorialSystem = new TutorialSystem(this);
-        
-        this.init();
-    }
+constructor() {
+    this.currentStructure = null;
+    this.structureType = 'beam';
+    this.currentTool = 'select';
+    this.selectedElement = null;
+    this.isCalculated = false;
+    this.renderer = null;
+    this.calculator = null;
+    this.ui = null;
+    this.canvasHandler = null;
     
-    init() {
-        // Configurar eventos
-        this.setupEventListeners();
-        
-        // Inicializar renderizador
-        this.renderer = new StructureRenderer('structure-canvas');
-        
-        // Inicializar calculadora
-        this.calculator = new StructureCalculator();
-        
-        // Inicializar módulo atual (viga por padrão)
-        this.loadStructureModule('beam');
-        
-        // Mostrar tela de boas-vindas
-        this.showWelcomeScreen();
-    }
+    this.init();
+}
+
+init() {
+    // Configurar eventos
+    this.setupEventListeners();
+    
+    // Inicializar renderizador
+    this.renderer = new StructureRenderer('structure-canvas');
+    
+    // Inicializar calculadora
+    this.calculator = new StructureCalculator();
+    
+    // Inicializar interface
+    this.ui = new UIControls(this);
+    
+    // Inicializar manipulador do canvas
+    this.canvasHandler = new CanvasHandler(this, this.renderer);
+    
+    // Inicializar módulo atual (viga por padrão)
+    this.loadStructureModule('beam');
+    
+    // Mostrar tela de boas-vindas
+    this.showWelcomeScreen();
+}
     
     setupEventListeners() {
         // Navegação
