@@ -4,6 +4,7 @@ class GridModule {
         this.structure = structure;
     }
 
+    
     checkIsostaticity() {
         // Para grelhas isostáticas: fórmulas específicas
         // Implementação simplificada
