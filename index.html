@@ -12,8 +12,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏗️</text></svg>">
-
-    
 </head>
 <body>
     <!-- Tela de Boas-Vindas -->
@@ -391,7 +389,7 @@
                             <h4><i class="fas fa-lightbulb"></i> Conceito do Dia</h4>
                             <div class="concept-card">
                                 <h5>Equilíbrio Estático</h5>
-                                <p>Uma estrutura está em equilíbrio quando a soma das forças e momentos é zero:</p>
+                                <p>Uma estrutura está em equilibria quando a soma das forças e momentos é zero:</p>
                                 <div class="equation">
                                     ΣFx = 0, ΣFy = 0, ΣM = 0
                                 </div>
@@ -494,22 +492,31 @@
         </div>
     </div>
 
-    <!-- Scripts -->
-
-    <script src="js/modules/beam.js"></script>
-    <script src="js/modules/frame.js"></script>
-    <script src="js/modules/grid.js"></script>  <!-- ADICIONADO -->
-    <script src="js/modules/arch.js"></script>   <!-- ADICIONADO -->
-    <script src="js/core/app.js"></script>
+    <!-- Scripts CORRIGIDOS - ORDEM CORRETA -->
+    
+    <!-- 1. Core Utilities (Primeiro) -->
     <script src="js/core/utils.js"></script>
     <script src="js/core/model.js"></script>
     <script src="js/core/calculator.js"></script>
+    
+    <!-- 2. Renderizadores -->
     <script src="js/render/renderer.js"></script>
     <script src="js/render/diagram-renderer.js"></script>
-    <script src="js/ui/canvas.js"></script>  <!-- ADICIONADO -->
+    
+    <!-- 3. UI Components -->
+    <script src="js/ui/canvas.js"></script>
     <script src="js/ui/controls.js"></script>
     <script src="js/ui/diagram.js"></script>
     <script src="js/ui/tutorial.js"></script>
+    
+    <!-- 4. Módulos Específicos -->
+    <script src="js/modules/beam.js"></script>
+    <script src="js/modules/frame.js"></script>
+    <script src="js/modules/grid.js"></script>
+    <script src="js/modules/arch.js"></script>
+    
+    <!-- 5. App Principal (ÚLTIMO) -->
+    <script src="js/core/app.js"></script>
     
 </body>
 </html>
