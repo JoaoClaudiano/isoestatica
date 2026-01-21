@@ -1,285 +1,510 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Isostática Interativa</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body { font-family: Arial, sans-serif; margin:0; background:#f0f4f8; color:#333; }
-header { display:flex; justify-content:space-between; align-items:center; background:#005b96; color:white; padding:10px 20px; position: sticky; top:0; z-index:100; }
-header h1 { margin:0; font-size:1.5em; }
-#hamburger { font-size:28px; cursor:pointer; }
-
-/* Sidebar esquerda (menu hamburger) */
-#sidebar { height:100%; width:0; position:fixed; z-index:2000; top:0; left:0; background:#007acc; overflow-x:hidden; transition:0.3s; padding-top:60px; color:white; }
-#sidebar a { padding:15px 20px; display:block; text-decoration:none; color:white; transition:0.2s; font-weight:bold;}
-#sidebar a:hover { background:#005b96; }
-#sidebar .closebtn { position:absolute; top:10px; right:15px; font-size:30px; cursor:pointer; }
-
-/* Sidebar direita fixa (edição de elementos) */
-#rightSidebar { position:fixed; top:60px; right:0; width:300px; height:calc(100% - 60px); background:#f9f9f9; border-left:1px solid #ccc; overflow-y:auto; padding:10px; z-index:1500; }
-#rightSidebar h3 { margin-top:0; color:#005b96; }
-.element { border-bottom:1px solid #ccc; padding:5px; margin-bottom:5px; cursor:pointer; }
-.element:hover { background:#e0f0ff; }
-.editSection { margin-top:10px; padding:5px; background:#f1f8ff; border-radius:5px; }
-
-/* Main content */
-#main { margin:10px 310px 10px 10px; }
-#controls { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px; }
-#controls button { flex:1 1 auto; padding:8px; background:#007acc; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold; }
-#controls button:hover { background:#005b96; }
-
-/* Canvas */
-#canvasContainer { position:relative; width:100%; margin-bottom:10px; overflow:hidden; }
-canvas { width:100%; height:400px; border:1px solid #999; background-image: radial-gradient(#ccc 1px, transparent 1px); background-size:20px 20px; display:block; }
-#crosshair { position:absolute; width:20px; height:20px; pointer-events:none; border:1px solid red; border-radius:50%; transform:translate(-50%, -50%); }
-
-/* Diagramas */
-.diagramSection { background:white; border-radius:8px; padding:10px; margin-bottom:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
-.diagramSection h3 { margin:0 0 5px 0; color:#005b96; }
-
-#memoryCard { background:white; border-radius:8px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:20px; }
-#memoryCard h3 { color:#005b96; margin-top:0; }
-
-/* Footer */
-footer { background:#005b96; color:white; text-align:center; padding:15px; font-size:0.9em; }
-footer a { color:white; text-decoration:none; margin:0 5px; }
-footer a:hover { text-decoration:underline; }
-
-/* Responsivo */
-@media(max-width:900px){
-    #main { margin:10px 10px 10px 10px; }
-    #rightSidebar { width:100%; height:250px; top:auto; bottom:0; border-left:none; border-top:1px solid #ccc; }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Isostática Lab - Laboratório Virtual de Análise Estrutural</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <!-- Tela de Boas-Vindas -->
+    <div id="welcome-screen" class="welcome-screen active">
+        <div class="welcome-container">
+            <div class="welcome-header">
+                <h1><i class="fas fa-cubes"></i> Isostática Lab</h1>
+                <p class="subtitle">Laboratório Virtual de Análise Estrutural</p>
+            </div>
+            
+            <div class="welcome-content">
+                <div class="welcome-card">
+                    <h2><i class="fas fa-graduation-cap"></i> Aprenda Isostática de Forma Interativa</h2>
+                    <p>Explore conceitos fundamentais da mecânica das estruturas através de simulações visuais e interativas.</p>
+                    
+                    <div class="feature-grid">
+                        <div class="feature">
+                            <i class="fas fa-ruler-combined"></i>
+                            <h3>Modelagem Gráfica</h3>
+                            <p>Crie estruturas arrastando e soltando elementos</p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-calculator"></i>
+                            <h3>Cálculos em Tempo Real</h3>
+                            <p>Visualize resultados instantaneamente</p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-chart-line"></i>
+                            <h3>Diagramas Interativos</h3>
+                            <p>Explore esforços internos ponto a ponto</p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-book"></i>
+                            <h3>Conteúdo Didático</h3>
+                            <p>Explicações passo a passo dos conceitos</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="structure-selector">
+                    <h3>Selecione o Tipo de Estrutura:</h3>
+                    <div class="structure-cards">
+                        <div class="structure-card" data-type="beam">
+                            <i class="fas fa-grip-lines-vertical"></i>
+                            <h4>Viga Isostática</h4>
+                            <p>Análise de esforços cortantes e momentos fletores</p>
+                            <button class="btn-select">Selecionar</button>
+                        </div>
+                        
+                        <div class="structure-card" data-type="frame">
+                            <i class="fas fa-th"></i>
+                            <h4>Pórtico Plano</h4>
+                            <p>Esforços normais, cortantes e momentos</p>
+                            <button class="btn-select">Selecionar</button>
+                        </div>
+                        
+                        <div class="structure-card" data-type="grid">
+                            <i class="fas fa-border-all"></i>
+                            <h4>Grelha Isostática</h4>
+                            <p>Flexão e torção em estruturas espaciais</p>
+                            <button class="btn-select">Selecionar</button>
+                        </div>
+                        
+                        <div class="structure-card" data-type="arch">
+                            <i class="fas fa-archway"></i>
+                            <h4>Arco Isostático</h4>
+                            <p>Linha de pressão e esforços em arcos</p>
+                            <button class="btn-select">Selecionar</button>
+                        </div>
+                    </div>
+                    
+                    <div class="quick-start">
+                        <p>Ou comece com um exemplo:</p>
+                        <select id="example-select" class="example-select">
+                            <option value="">Selecione um exemplo</option>
+                            <option value="beam-simple">Viga biapoiada com carga pontual</option>
+                            <option value="beam-cantilever">Viga em balanço com carga distribuída</option>
+                            <option value="frame-portico">Pórtico simples com carga horizontal</option>
+                            <option value="grid-simple">Grelha quadrada com carga vertical</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="welcome-footer">
+                <p class="disclaimer">
+                    <i class="fas fa-info-circle"></i> Esta é uma ferramenta educacional. Para projetos reais, consulte um engenheiro estrutural.
+                </p>
+                <button id="skip-tutorial" class="btn-secondary">Pular Tutorial</button>
+            </div>
+        </div>
+    </div>
 
-<header>
-  <h1>Isostática Interativa</h1>
-  <span id="hamburger">&#9776;</span>
-</header>
+    <!-- Interface Principal (inicialmente oculta) -->
+    <div id="main-interface" class="main-interface">
+        <!-- Cabeçalho -->
+        <header class="app-header">
+            <div class="header-left">
+                <button id="back-to-menu" class="btn-icon" title="Voltar ao menu">
+                    <i class="fas fa-home"></i>
+                </button>
+                <h1 id="structure-title">Viga Isostática</h1>
+                <div class="structure-indicator">
+                    <span id="structure-type-indicator">VIGA</span>
+                    <span id="isostatic-indicator" class="status-badge isostatic">ISOSTÁTICA</span>
+                </div>
+            </div>
+            
+            <div class="header-center">
+                <div class="app-controls">
+                    <button id="btn-reset" class="btn-control" title="Reiniciar">
+                        <i class="fas fa-redo"></i> Reiniciar
+                    </button>
+                    <button id="btn-calculate" class="btn-control btn-primary" title="Calcular">
+                        <i class="fas fa-bolt"></i> Calcular
+                    </button>
+                    <button id="btn-export" class="btn-control" title="Exportar">
+                        <i class="fas fa-download"></i> Exportar
+                    </button>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <button id="btn-help" class="btn-icon" title="Ajuda">
+                    <i class="fas fa-question-circle"></i>
+                </button>
+                <button id="btn-settings" class="btn-icon" title="Configurações">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button id="btn-fullscreen" class="btn-icon" title="Tela cheia">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+        </header>
 
-<!-- Sidebar esquerda hamburger -->
-<div id="sidebar">
-  <span class="closebtn" onclick="closeSidebar()">&times;</span>
-  <a href="aba/metodologia-vigas.html" target="_blank">Metodologia Vigas</a>
-  <a href="aba/metodologia-trelicas.html" target="_blank">Metodologia Treliças</a>
-  <a href="aba/sobre-nos.html" target="_blank">Sobre Nós</a>
-  <a href="aba/contato.html" target="_blank">Contato</a>
-</div>
+        <!-- Área Principal -->
+        <div class="main-container">
+            <!-- Painel Esquerdo - Ferramentas -->
+            <aside class="left-panel">
+                <div class="panel-section">
+                    <h3><i class="fas fa-tools"></i> Ferramentas</h3>
+                    <div class="tool-grid">
+                        <button id="tool-select" class="tool-btn active" data-tool="select">
+                            <i class="fas fa-mouse-pointer"></i>
+                            <span>Selecionar</span>
+                        </button>
+                        <button id="tool-node" class="tool-btn" data-tool="node">
+                            <i class="fas fa-circle"></i>
+                            <span>Nó</span>
+                        </button>
+                        <button id="tool-beam" class="tool-btn" data-tool="beam">
+                            <i class="fas fa-grip-lines"></i>
+                            <span>Barra</span>
+                        </button>
+                        <button id="tool-delete" class="tool-btn" data-tool="delete">
+                            <i class="fas fa-trash"></i>
+                            <span>Excluir</span>
+                        </button>
+                    </div>
+                </div>
 
-<!-- Sidebar direita fixa -->
-<div id="rightSidebar">
-  <h3>Elementos Criados</h3>
-  <div id="elementList">Nenhum elemento ainda.</div>
-  <div id="editSection" class="editSection"></div>
-</div>
+                <div class="panel-section">
+                    <h3><i class="fas fa-vector-square"></i> Vínculos</h3>
+                    <div class="support-grid">
+                        <button class="support-btn" data-support="roller" title="Apoio Móvel">
+                            <div class="support-icon roller"></div>
+                            <span>Móvel</span>
+                        </button>
+                        <button class="support-btn" data-support="pinned" title="Apoio Fixo">
+                            <div class="support-icon pinned"></div>
+                            <span>Fixo</span>
+                        </button>
+                        <button class="support-btn" data-support="fixed" title="Engaste">
+                            <div class="support-icon fixed"></div>
+                            <span>Engaste</span>
+                        </button>
+                        <button class="support-btn" data-support="hinge" title="Rótula">
+                            <div class="support-icon hinge"></div>
+                            <span>Rótula</span>
+                        </button>
+                    </div>
+                </div>
 
-<div id="main">
+                <div class="panel-section">
+                    <h3><i class="fas fa-weight-hanging"></i> Cargas</h3>
+                    <div class="load-grid">
+                        <button class="load-btn" data-load="point" title="Carga Pontual">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>Pontual</span>
+                        </button>
+                        <button class="load-btn" data-load="distributed" title="Carga Distribuída">
+                            <i class="fas fa-arrows-alt-h"></i>
+                            <span>Distribuída</span>
+                        </button>
+                        <button class="load-btn" data-load="moment" title="Momento">
+                            <i class="fas fa-redo-alt"></i>
+                            <span>Momento</span>
+                        </button>
+                    </div>
+                    
+                    <div class="load-properties">
+                        <div class="input-group">
+                            <label for="load-magnitude">Intensidade (kN)</label>
+                            <input type="number" id="load-magnitude" value="10" step="1">
+                        </div>
+                        <div class="input-group">
+                            <label for="load-direction">Direção (°)</label>
+                            <input type="number" id="load-direction" value="270" min="0" max="360">
+                        </div>
+                        <div id="distributed-props" class="input-group hidden">
+                            <label for="load-start">Início (m)</label>
+                            <input type="number" id="load-start" value="0" step="0.1">
+                            <label for="load-end">Fim (m)</label>
+                            <input type="number" id="load-end" value="1" step="0.1">
+                        </div>
+                    </div>
+                </div>
 
-  <div id="controls">
-    <button onclick="addNodePrompt()">Adicionar Nó/Apoio</button>
-    <button onclick="startDrawBeam()">Desenhar Viga</button>
-    <button onclick="addLoadPrompt()">Adicionar Carga Concentrada</button>
-    <button onclick="addDistLoadPrompt()">Adicionar Carga Distribuída</button>
-    <button onclick="addMomentPrompt()">Adicionar Momento</button>
-    <button onclick="addHingePrompt()">Adicionar Rótula</button>
-    <button onclick="resetStructure()">Resetar Estrutura</button>
-  </div>
+                <div class="panel-section">
+                    <h3><i class="fas fa-sliders-h"></i> Propriedades</h3>
+                    <div class="property-grid">
+                        <div class="input-group">
+                            <label for="scale-factor">Escala: <span id="scale-value">1:100</span></label>
+                            <input type="range" id="scale-factor" min="50" max="200" value="100">
+                        </div>
+                        <div class="input-group">
+                            <label for="grid-snap">Snap to Grid</label>
+                            <input type="checkbox" id="grid-snap" checked>
+                        </div>
+                        <div class="input-group">
+                            <label for="show-coordinates">Mostrar Coordenadas</label>
+                            <input type="checkbox" id="show-coordinates" checked>
+                        </div>
+                    </div>
+                </div>
+            </aside>
 
-  <div id="canvasContainer">
-    <canvas id="canvas"></canvas>
-    <div id="crosshair"></div>
-  </div>
+            <!-- Área Central - Canvas e Visualização -->
+            <main class="center-area">
+                <div class="canvas-container">
+                    <canvas id="structure-canvas"></canvas>
+                    <div class="canvas-overlay">
+                        <div id="coordinate-display" class="coordinate-display">
+                            X: 0.00 m, Y: 0.00 m
+                        </div>
+                        <div id="selection-info" class="selection-info hidden">
+                            <span id="selected-element"></span>
+                        </div>
+                    </div>
+                    <div class="canvas-controls">
+                        <button id="zoom-in" class="canvas-btn" title="Aumentar zoom">
+                            <i class="fas fa-search-plus"></i>
+                        </button>
+                        <button id="zoom-out" class="canvas-btn" title="Diminuir zoom">
+                            <i class="fas fa-search-minus"></i>
+                        </button>
+                        <button id="pan-view" class="canvas-btn" title="Mover vista">
+                            <i class="fas fa-hand-paper"></i>
+                        </button>
+                        <button id="fit-view" class="canvas-btn" title="Ajustar à tela">
+                            <i class="fas fa-expand-arrows-alt"></i>
+                        </button>
+                    </div>
+                </div>
 
-  <div id="memoryCard">
-    <h3>Memória de cálculo das reações</h3>
-    <div id="reactionMemory">Nenhuma reação calculada ainda.</div>
-  </div>
+                <div class="diagram-controls">
+                    <h3><i class="fas fa-chart-bar"></i> Diagramas</h3>
+                    <div class="diagram-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-N" checked>
+                            <span class="toggle-slider" style="--color: #3498db;"></span>
+                            <span class="toggle-label">Normal (N)</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-V" checked>
+                            <span class="toggle-slider" style="--color: #2ecc71;"></span>
+                            <span class="toggle-label">Cortante (V)</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-M" checked>
+                            <span class="toggle-slider" style="--color: #e74c3c;"></span>
+                            <span class="toggle-label">Momento (M)</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-T" class="hidden">
+                            <span class="toggle-slider" style="--color: #9b59b6;"></span>
+                            <span class="toggle-label">Torção (T)</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-deformed">
+                            <span class="toggle-slider" style="--color: #f39c12;"></span>
+                            <span class="toggle-label">Deformada</span>
+                        </label>
+                    </div>
+                </div>
+            </main>
 
-</div>
+            <!-- Painel Direito - Resultados e Informações -->
+            <aside class="right-panel">
+                <div class="panel-tabs">
+                    <button class="tab-btn active" data-tab="results">
+                        <i class="fas fa-calculator"></i> Resultados
+                    </button>
+                    <button class="tab-btn" data-tab="details">
+                        <i class="fas fa-info-circle"></i> Detalhes
+                    </button>
+                    <button class="tab-btn" data-tab="tutorial">
+                        <i class="fas fa-graduation-cap"></i> Aprendizado
+                    </button>
+                </div>
 
-<footer>
-<p>© 2024 Isostática Interativa | Desenvolvido com ❤️ por [Nome da Equipe]</p>
-<p>
-<a href="pages/politica.html">Política de Privacidade</a> |
-<a href="pages/termos.html">Termos de Uso</a> |
-<a href="pages/ajuda.html">Ajuda</a> |
-<a href="pages/contato.html">Contato</a>
-</p>
-</footer>
+                <div class="panel-content">
+                    <!-- Aba de Resultados -->
+                    <div id="tab-results" class="tab-content active">
+                        <div class="results-section">
+                            <h4><i class="fas fa-balance-scale"></i> Reações de Apoio</h4>
+                            <div id="reactions-container" class="results-container">
+                                <p class="placeholder">Calcule a estrutura para ver as reações</p>
+                            </div>
+                        </div>
 
-<script>
-// Sidebar esquerda
-const sidebar = document.getElementById("sidebar");
-document.getElementById("hamburger").onclick = () => { sidebar.style.width="250px"; };
-function closeSidebar() { sidebar.style.width="0"; }
+                        <div class="results-section">
+                            <h4><i class="fas fa-chart-line"></i> Valores Extremos</h4>
+                            <div id="extremes-container" class="results-container">
+                                <p class="placeholder">Valores máximos e mínimos dos diagramas</p>
+                            </div>
+                        </div>
 
-// Modelo estrutural
-const model = { nodes:[], elements:[], loads:[], distLoads:[], moments:[], hinges:[] };
-let nodeIdCounter=1, tempNode=null;
-const canvas = document.getElementById('canvas');
-canvas.width = canvas.offsetWidth;
-canvas.height = canvas.offsetHeight;
-const ctx = canvas.getContext('2d');
-const crosshair = document.getElementById('crosshair');
+                        <div class="results-section">
+                            <h4><i class="fas fa-ruler"></i> Propriedades da Estrutura</h4>
+                            <div id="properties-container" class="results-container">
+                                <div class="property-item">
+                                    <span class="property-label">Grau de Estaticidade:</span>
+                                    <span id="static-degree" class="property-value">0</span>
+                                </div>
+                                <div class="property-item">
+                                    <span class="property-label">Número de Barras:</span>
+                                    <span id="bar-count" class="property-value">0</span>
+                                </div>
+                                <div class="property-item">
+                                    <span class="property-label">Número de Nós:</span>
+                                    <span id="node-count" class="property-value">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-// Mira
-canvas.addEventListener("mousemove", e => {
-  const rect = canvas.getBoundingClientRect();
-  crosshair.style.left = (e.clientX - rect.left) + "px";
-  crosshair.style.top = (e.clientY - rect.top) + "px";
-});
+                    <!-- Aba de Detalhes -->
+                    <div id="tab-details" class="tab-content">
+                        <div class="details-section">
+                            <h4><i class="fas fa-calculator"></i> Equações de Equilíbrio</h4>
+                            <div id="equations-container" class="details-container">
+                                <p class="placeholder">Equações serão exibidas após o cálculo</p>
+                            </div>
+                        </div>
 
-// Funções com confirmação de posição
-function addNodePrompt() {
-  const x = parseFloat(prompt("Informe X do nó (px ou metros):","50"));
-  const y = parseFloat(prompt("Informe Y do nó (px ou metros):","50"));
-  if(isNaN(x)||isNaN(y)) return;
-  model.nodes.push({id:nodeIdCounter++, x, y});
-  updateRightSidebar(); draw(); updateMemoryCard();
-}
+                        <div class="details-section">
+                            <h4><i class="fas fa-search"></i> Seções Críticas</h4>
+                            <div id="critical-sections" class="details-container">
+                                <p class="placeholder">Seções com valores extremos</p>
+                            </div>
+                        </div>
 
-function startDrawBeam() {
-  canvas.onclick = e => {
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    let node = {id:nodeIdCounter++, x, y};
-    model.nodes.push(node);
-    if(!tempNode) { tempNode = node; alert("Clique no segundo nó para finalizar a viga"); }
-    else {
-      const confirmX = parseFloat(prompt("Confirme X do segundo nó:", node.x));
-      const confirmY = parseFloat(prompt("Confirme Y do segundo nó:", node.y));
-      node.x = isNaN(confirmX)?node.x:confirmX;
-      node.y = isNaN(confirmY)?node.y:confirmY;
-      model.elements.push({n1: tempNode, n2: node});
-      tempNode=null; canvas.onclick=null;
-    }
-    updateRightSidebar(); draw(); updateMemoryCard();
-  };
-}
+                        <div class="details-section">
+                            <h4><i class="fas fa-code"></i> Expressões Analíticas</h4>
+                            <div id="analytical-expressions" class="details-container">
+                                <p class="placeholder">Funções matemáticas dos esforços</p>
+                            </div>
+                        </div>
+                    </div>
 
-function addLoadPrompt() {
-  const nodeId = parseInt(prompt("Nó onde aplicar carga (ID):","1"));
-  const value = parseFloat(prompt("Valor da carga (kN):","10"));
-  const node = model.nodes.find(n=>n.id===nodeId);
-  if(node){ model.loads.push({node,value}); updateRightSidebar(); draw(); updateMemoryCard(); }
-}
+                    <!-- Aba de Aprendizado -->
+                    <div id="tab-tutorial" class="tab-content">
+                        <div class="tutorial-section">
+                            <h4><i class="fas fa-lightbulb"></i> Conceito do Dia</h4>
+                            <div class="concept-card">
+                                <h5>Equilíbrio Estático</h5>
+                                <p>Uma estrutura está em equilíbrio quando a soma das forças e momentos é zero:</p>
+                                <div class="equation">
+                                    ΣFx = 0, ΣFy = 0, ΣM = 0
+                                </div>
+                            </div>
+                        </div>
 
-function addDistLoadPrompt() {
-  const elIndex = parseInt(prompt("Índice da viga para carga distribuída:","0"));
-  const value = parseFloat(prompt("Valor da carga distribuída (kN/m):","5"));
-  const el = model.elements[elIndex];
-  if(el){ model.distLoads.push({element:el,value}); updateRightSidebar(); draw(); updateMemoryCard(); }
-}
+                        <div class="tutorial-section">
+                            <h4><i class="fas fa-play-circle"></i> Tutorial Rápido</h4>
+                            <div class="tutorial-steps">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <span class="step-text">Adicione nós clicando na tela</span>
+                                </div>
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <span class="step-text">Conecte nós com barras</span>
+                                </div>
+                                <div class="step">
+                                    <span class="step-number">3</span>
+                                    <span class="step-text">Adicione vínculos nos apoios</span>
+                                </div>
+                                <div class="step">
+                                    <span class="step-number">4</span>
+                                    <span class="step-text">Aplique cargas e momentos</span>
+                                </div>
+                                <div class="step">
+                                    <span class="step-number">5</span>
+                                    <span class="step-text">Clique em Calcular para analisar</span>
+                                </div>
+                            </div>
+                        </div>
 
-function addMomentPrompt() {
-  const nodeId = parseInt(prompt("Nó onde aplicar momento (ID):","1"));
-  const value = parseFloat(prompt("Valor do momento (kN·m):","5"));
-  const node = model.nodes.find(n=>n.id===nodeId);
-  if(node){ model.moments.push({node,value}); updateRightSidebar(); draw(); updateMemoryCard(); }
-}
+                        <div class="tutorial-section">
+                            <h4><i class="fas fa-book"></i> Convenção de Sinais</h4>
+                            <div class="convention-card">
+                                <div class="convention-item">
+                                    <div class="convention-icon positive"></div>
+                                    <span>Cortante positivo: gira elemento no sentido horário</span>
+                                </div>
+                                <div class="convention-item">
+                                    <div class="convention-icon positive-moment"></div>
+                                    <span>Momento positivo: traciona fibras inferiores</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
 
-function addHingePrompt() {
-  const elIndex = parseInt(prompt("Índice da viga para rótula:","0"));
-  const el = model.elements[elIndex];
-  if(el){ model.hinges.push({element:el}); updateRightSidebar(); draw(); updateMemoryCard(); }
-}
+        <!-- Barra de Status -->
+        <footer class="status-bar">
+            <div class="status-left">
+                <span id="status-message" class="status-message">Pronto para modelar</span>
+            </div>
+            <div class="status-center">
+                <div class="status-indicators">
+                    <span class="status-indicator" id="calc-status">
+                        <i class="fas fa-sync-alt"></i> Não calculado
+                    </span>
+                    <span class="status-indicator" id="error-count">
+                        <i class="fas fa-exclamation-triangle"></i> 0 erros
+                    </span>
+                </div>
+            </div>
+            <div class="status-right">
+                <span class="version">v1.0.0</span>
+            </div>
+        </footer>
+    </div>
 
-function resetStructure() {
-  model.nodes=[]; model.elements=[]; model.loads=[]; model.distLoads=[]; model.moments=[]; model.hinges=[]; tempNode=null;
-  updateRightSidebar(); draw(); updateMemoryCard();
-}
+    <!-- Modal de Tutorial -->
+    <div id="tutorial-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-graduation-cap"></i> Tutorial Interativo</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="tutorial-content"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="tutorial-prev" class="btn-secondary">Anterior</button>
+                <button id="tutorial-next" class="btn-primary">Próximo</button>
+                <button id="tutorial-skip" class="btn-text">Pular Tutorial</button>
+            </div>
+        </div>
+    </div>
 
-// Desenho
-function draw() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  // Vigas
-  model.elements.forEach(el=>{
-    ctx.strokeStyle="#007acc"; ctx.lineWidth=3;
-    ctx.beginPath(); ctx.moveTo(el.n1.x, el.n1.y); ctx.lineTo(el.n2.x, el.n2.y); ctx.stroke();
-  });
-  // Nós
-  model.nodes.forEach(n=>{
-    ctx.fillStyle="#ff0000"; ctx.beginPath(); ctx.arc(n.x,n.y,5,0,2*Math.PI); ctx.fill();
-  });
-  // Cargas concentradas
-  ctx.strokeStyle="green"; ctx.fillStyle="green";
-  model.loads.forEach(l=>{
-    ctx.beginPath(); ctx.moveTo(l.node.x, l.node.y-20); ctx.lineTo(l.node.x, l.node.y); ctx.stroke();
-    ctx.fillText(l.value+" kN", l.node.x+5, l.node.y-25);
-  });
-  // Momentos
-  ctx.strokeStyle="orange";
-  model.moments.forEach(m=>{
-    ctx.beginPath(); ctx.arc(m.node.x, m.node.y,15,0,Math.PI*1.5); ctx.stroke();
-    ctx.fillText(m.value+" kN·m", m.node.x+20,m.node.y-20);
-  });
-}
+    <!-- Modal de Configurações -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-cog"></i> Configurações</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Configurações serão adicionadas aqui -->
+            </div>
+        </div>
+    </div>
 
-// Sidebar direita
-function updateRightSidebar() {
-  const container = document.getElementById("elementList");
-  const editSection = document.getElementById("editSection");
-  if(model.nodes.length+model.elements.length===0){ container.innerHTML="Nenhum elemento ainda."; editSection.innerHTML=""; return; }
-  let html="";
-  model.nodes.forEach(n=>html+=`<div class="element" onclick="editNode(${n.id})">Nó ${n.id} - (${n.x.toFixed(0)},${n.y.toFixed(0)})</div>`);
-  model.elements.forEach((el,i)=>html+=`<div class="element" onclick="editElement(${i})">Viga ${i+1} - Nó ${el.n1.id} a Nó ${el.n2.id}</div>`);
-  container.innerHTML=html;
-  editSection.innerHTML="";
-}
-
-function editNode(id){
-  const node = model.nodes.find(n=>n.id===id);
-  const editSection = document.getElementById("editSection");
-  editSection.innerHTML = `
-    <h4>Editar Nó ${id}</h4>
-    X: <input type="number" id="editX" value="${node.x}"><br>
-    Y: <input type="number" id="editY" value="${node.y}"><br>
-    <button onclick="saveNode(${id})">Salvar</button>
-  `;
-}
-function saveNode(id){
-  const node = model.nodes.find(n=>n.id===id);
-  node.x = parseFloat(document.getElementById("editX").value);
-  node.y = parseFloat(document.getElementById("editY").value);
-  updateRightSidebar(); draw(); updateMemoryCard();
-}
-
-function editElement(index){
-  const el = model.elements[index];
-  const editSection = document.getElementById("editSection");
-  editSection.innerHTML = `
-    <h4>Editar Viga ${index+1}</h4>
-    Nó 1: X <input type="number" id="elX1" value="${el.n1.x}"> Y <input type="number" id="elY1" value="${el.n1.y}"><br>
-    Nó 2: X <input type="number" id="elX2" value="${el.n2.x}"> Y <input type="number" id="elY2" value="${el.n2.y}"><br>
-    <button onclick="saveElement(${index})">Salvar</button>
-  `;
-}
-function saveElement(index){
-  const el = model.elements[index];
-  el.n1.x = parseFloat(document.getElementById("elX1").value);
-  el.n1.y = parseFloat(document.getElementById("elY1").value);
-  el.n2.x = parseFloat(document.getElementById("elX2").value);
-  el.n2.y = parseFloat(document.getElementById("elY2").value);
-  updateRightSidebar(); draw(); updateMemoryCard();
-}
-
-// Memória de cálculo simulada
-function updateMemoryCard(){
-  const container = document.getElementById("reactionMemory");
-  if(model.nodes.length===0){ container.innerHTML="Nenhuma reação calculada ainda."; return; }
-  let html="<ul>";
-  model.nodes.forEach(n=>html+=`<li>Nó ${n.id}: Fx=0 kN, Fy=0 kN, Mz=0 kN·m</li>`);
-  html+="</ul>";
-  container.innerHTML = html;
-}
-
-// Inicial
-updateRightSidebar(); draw(); updateMemoryCard();
-</script>
-
+    <!-- Scripts -->
+    <script src="js/core/utils.js"></script>
+    <script src="js/core/model.js"></script>
+    <script src="js/core/calculator.js"></script>
+    <script src="js/render/renderer.js"></script>
+    <script src="js/render/diagram-renderer.js"></script>
+    <script src="js/ui/canvas.js"></script>
+    <script src="js/ui/controls.js"></script>
+    <script src="js/ui/diagram.js"></script>
+    <script src="js/ui/tutorial.js"></script>
+    <script src="js/modules/beam.js"></script>
+    <script src="js/modules/frame.js"></script>
+    <script src="js/modules/grid.js"></script>
+    <script src="js/modules/arch.js"></script>
+    <script src="js/core/app.js"></script>
 </body>
 </html>
