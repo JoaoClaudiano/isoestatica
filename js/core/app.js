@@ -1,4 +1,43 @@
 // Isostática Lab - Aplicação Principal Simplificada
+// NO TOPO DO app.js - Substitua a inicialização atual
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM carregado, inicializando canvas...');
+    
+    // Aguardar um pouco para garantir que tudo está pronto
+    setTimeout(initApp, 100);
+});
+
+function initApp() {
+    const canvas = document.getElementById('structure-canvas');
+    
+    if (!canvas) {
+        console.error('❌ Canvas não encontrado! Verificando elementos...');
+        console.log('Elementos com ID:', document.querySelectorAll('[id]'));
+        return;
+    }
+    
+    console.log('✅ Canvas encontrado:', canvas);
+    console.log('Dimensões:', canvas.clientWidth, 'x', canvas.clientHeight);
+    
+    // Verificar se o canvas está visível
+    const style = window.getComputedStyle(canvas);
+    if (style.display === 'none') {
+        console.warn('⚠️ Canvas está com display:none');
+    }
+    
+    // Inicializar contexto
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('❌ Não foi possível obter contexto 2D');
+        return;
+    }
+    
+    console.log('✅ Contexto 2D inicializado com sucesso!');
+    
+    // Restante da sua inicialização...
+    // Inicializar controles, módulos, etc.
+}
+
 class IsostaticaApp {
     constructor() {
         this.currentStructure = null;
